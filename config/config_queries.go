@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"ariga.io/atlas/sql/schema"
 	"github.com/gosuda/ornn/config/atlas"
@@ -30,98 +31,94 @@ func (t *Queries) InitDefaultQueryTables() error {
 	return nil
 }
 
-// TODO : 작업 예정
 func (t *Queries) initDefaultQueryTable(table *schema.Table) error {
-	// insert all
-	var insertQuestionare string
-	for i, col := range table.Columns {
-		if table.PrimaryKey != nil && col.Name == table.PrimaryKey.Name {
-			insertQuestionare += "NULL, "
-		} else {
-			if t.schema.DbType == atlas.DbTypePostgre || t.schema.DbType == atlas.DbTypeCockroachDB {
-				insertQuestionare += fmt.Sprintf("$%d, ", i+1)
-			} else {
-				insertQuestionare += "?, "
-			}
+	placeholder := func(idx int) string {
+		if t.schema.DbType == atlas.DbTypePostgre || t.schema.DbType == atlas.DbTypeCockroachDB {
+			return fmt.Sprintf("$%d", idx)
 		}
+		return "?"
 	}
-	insertQuestionare = insertQuestionare[:len(insertQuestionare)-2]
+
+	// INSERT
+	insertValues := buildInsertValues(table, placeholder)
 	t.AddQuery(table.Name, &Query{
 		Name:    "insert",
 		Comment: "default query - insert",
-		Sql:     fmt.Sprintf("INSERT INTO %s VALUES (%s)", table.Name, insertQuestionare),
+		Sql:     fmt.Sprintf("INSERT INTO %s VALUES (%s)", table.Name, insertValues),
 	})
 
-	// where
-	var i int
-	var where string
-	if table.PrimaryKey != nil && len(table.PrimaryKey.Parts) == 1 {
-		pkName := table.PrimaryKey.Parts[0].C.Name // TODO
-		if pkName != "" {
-			if t.schema.DbType == atlas.DbTypePostgre || t.schema.DbType == atlas.DbTypeCockroachDB {
-				where = fmt.Sprintf(" WHERE %s = $%d", pkName, i+1)
-			} else {
-				where = fmt.Sprintf(" WHERE %s = ?", pkName)
-			}
-		}
-	}
+	// WHERE (PK 기준)
+	where := buildWhere(table, placeholder, 1)
 
-	// select
+	// SELECT
 	t.AddQuery(table.Name, &Query{
 		Name:    "select",
 		Comment: "default query - select",
 		Sql:     fmt.Sprintf("SELECT * FROM %s%s", table.Name, where),
 	})
 
-	// delete
+	// DELETE
 	t.AddQuery(table.Name, &Query{
 		Name:    "delete",
 		Comment: "default query - delete",
 		Sql:     fmt.Sprintf("DELETE FROM %s%s", table.Name, where),
 	})
 
-	// set
-	setQuestionaire := ""
-	var col *schema.Column
-	for i, col = range table.Columns {
-		if col.Name == table.PrimaryKey.Name {
-			continue
-		}
-		if t.schema.DbType == atlas.DbTypePostgre || t.schema.DbType == atlas.DbTypeCockroachDB {
-			setQuestionaire += fmt.Sprintf("%s = $%d, ", col.Name, i+1)
-		} else {
-			setQuestionaire += fmt.Sprintf("%s = ?, ", col.Name)
-		}
-	}
-	setQuestionaire = setQuestionaire[:len(setQuestionaire)-2]
-
-	// where ( update )
-	if table.PrimaryKey != nil && len(table.PrimaryKey.Parts) == 1 {
-		pkName := table.PrimaryKey.Parts[0].C.Name // TODO
-		if pkName != "" {
-			if t.schema.DbType == atlas.DbTypePostgre || t.schema.DbType == atlas.DbTypeCockroachDB {
-				where = fmt.Sprintf(" WHERE %s = $%d", pkName, i+2)
-			} else {
-				where = fmt.Sprintf(" WHERE %s = ?", pkName)
-			}
-		}
-	}
-	// update
+	// UPDATE
+	setClause, nextIdx := buildUpdateSet(table, placeholder)
+	whereUpdate := buildWhere(table, placeholder, nextIdx)
 	t.AddQuery(table.Name, &Query{
 		Name:    "update",
 		Comment: "default query - update",
-		Sql:     fmt.Sprintf("UPDATE %s SET %s%s", table.Name, setQuestionaire, where),
+		Sql:     fmt.Sprintf("UPDATE %s SET %s%s", table.Name, setClause, whereUpdate),
 	})
 
 	return nil
 }
 
+func buildInsertValues(table *schema.Table, placeholder func(int) string) string {
+	var sb strings.Builder
+	for i, col := range table.Columns {
+		if table.PrimaryKey != nil && col.Name == table.PrimaryKey.Name {
+			sb.WriteString("NULL")
+		} else {
+			sb.WriteString(placeholder(i + 1))
+		}
+		if i < len(table.Columns)-1 {
+			sb.WriteString(", ")
+		}
+	}
+	return sb.String()
+}
+
+func buildUpdateSet(table *schema.Table, placeholder func(int) string) (string, int) {
+	var sb strings.Builder
+	idx := 1
+	for _, col := range table.Columns {
+		if table.PrimaryKey != nil && col.Name == table.PrimaryKey.Name {
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("%s = %s, ", col.Name, placeholder(idx)))
+		idx++
+	}
+	query := strings.TrimSuffix(sb.String(), ", ")
+	return query, idx
+}
+
+func buildWhere(table *schema.Table, placeholder func(int) string, startIdx int) string {
+	if table.PrimaryKey == nil || len(table.PrimaryKey.Parts) != 1 {
+		return ""
+	}
+	pk := table.PrimaryKey.Parts[0].C.Name
+	if pk == "" {
+		return ""
+	}
+	return fmt.Sprintf(" WHERE %s = %s", pk, placeholder(startIdx))
+}
+
 func (t *Queries) AddQuery(tableName string, query *Query) {
 	if t.Class == nil {
 		t.Class = make(map[string][]*Query, 10)
-	}
-	if _, ok := t.Class[tableName]; ok == false {
-		t.Class[tableName] = make([]*Query, 0, 10)
 	}
 	t.Class[tableName] = append(t.Class[tableName], query)
 }
@@ -148,13 +145,7 @@ type CustomFieldType struct {
 	CustomType string `json:"type"`
 }
 
-//------------------------------------------------------------------------------------------------//
-// query
-
-func (t *Query) AddCustomType(tableName, fieldName string, customType string) {
-	if t.CustomFieldTypes == nil {
-		t.CustomFieldTypes = make([]*CustomFieldType, 0, 10)
-	}
+func (t *Query) AddCustomType(tableName, fieldName, customType string) {
 	t.CustomFieldTypes = append(t.CustomFieldTypes, &CustomFieldType{
 		TableName:  tableName,
 		FieldName:  fieldName,
@@ -162,7 +153,7 @@ func (t *Query) AddCustomType(tableName, fieldName string, customType string) {
 	})
 }
 
-func (t *Query) GetCustomType(fieldName string) (genType string) {
+func (t *Query) GetCustomType(fieldName string) string {
 	for _, pt := range t.CustomFieldTypes {
 		if pt.FieldName == fieldName {
 			return pt.CustomType

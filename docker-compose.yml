@@ -6,7 +6,6 @@ services:
     build:
      context: ./
      dockerfile: Dockerfile
-    network_mode: host
     ports:
      - 8000:8000
     volumes:
@@ -21,3 +20,23 @@ services:
       - --file_config_path=/output/config.json
       - --file_gen_path=/output/gen.go
       - --file_schema_path=/output/schema.hcl
+    networks:
+      - ornn_network
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: db_name
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - ornn_network
+
+networks:
+  ornn_network:
+    driver: bridge
