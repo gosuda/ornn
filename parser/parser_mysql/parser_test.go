@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/gosuda/ornn/atlas"
 	"github.com/gosuda/ornn/config"
-	"github.com/gosuda/ornn/config/atlas"
 	"github.com/gosuda/ornn/db/db_mysql"
 	tiparser "github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestParseMysqlSelect(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "951753ck", "test")
+	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
 	require.NoError(t, err)
 
 	atlas := atlas.New(atlas.DbTypeMaria, db)
@@ -31,7 +31,6 @@ func TestParseMysqlSelect(t *testing.T) {
 	// stmtNodes, _, err := tiparser.New().Parse("SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate FROM Orders INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;", "", "")
 
 	stmtNodes, _, err := tiparser.New().Parse("select * from user where id = ? and pw = abc", "", "")
-
 	require.NoError(t, err)
 	for _, stmtNode := range stmtNodes {
 		selectStmt := stmtNode.(*ast.SelectStmt)
@@ -69,7 +68,7 @@ func TestParseMysqlSelect(t *testing.T) {
 }
 
 func TestParseMysqlInsert(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "951753ck", "test")
+	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
 	require.NoError(t, err)
 	atlas := atlas.New(atlas.DbTypeMaria, db)
 	sc, err := atlas.InspectSchema()
@@ -86,7 +85,7 @@ func TestParseMysqlInsert(t *testing.T) {
 }
 
 func TestParseMysqlUpdate(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "951753ck", "test")
+	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
 	require.NoError(t, err)
 	atlas := atlas.New(atlas.DbTypeMaria, db)
 	sc, err := atlas.InspectSchema()

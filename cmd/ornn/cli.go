@@ -19,8 +19,8 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"ariga.io/atlas/sql/schema"
+	"github.com/gosuda/ornn/atlas"
 	"github.com/gosuda/ornn/config"
-	"github.com/gosuda/ornn/config/atlas"
 	"github.com/gosuda/ornn/db"
 	"github.com/gosuda/ornn/db/db_mysql"
 	"github.com/gosuda/ornn/db/db_postgres"

@@ -1,0 +1,18 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: root
+      POSTGRES_DB: db_name
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - ornn_network
+
+networks:
+  ornn_network:
+    driver: bridge

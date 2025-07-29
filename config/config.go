@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"ariga.io/atlas/sql/schema"
-	"github.com/gosuda/ornn/config/atlas"
+	"github.com/gosuda/ornn/atlas"
 )
 
 type Config struct {
@@ -63,4 +63,20 @@ func (t *Config) Save(path string) error {
 		return err
 	}
 	return nil
+}
+
+type Global struct {
+	FilePath string `json:"file_path"`
+	FileName string `json:"file_name"`
+
+	DoNotEdit   string `json:"do_not_edit"`
+	PackageName string `json:"package_name"`
+	ClassName   string `json:"class_name"`
+
+	Import []*Import `json:"import"`
+}
+
+type Import struct {
+	Alias string `json:"alias"`
+	Path  string `json:"path"`
 }

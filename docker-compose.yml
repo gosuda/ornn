@@ -1,4 +1,3 @@
-version: '3.2'
 services:
   ornn:
     container_name: ornn
@@ -11,7 +10,8 @@ services:
     volumes:
       - ./output:/output
     command: ./app
-      - -D=mariadb
+      - -D=mysql
+      
       - -A=host.docker.internal
       - -P=3306
       - -i=root
@@ -22,21 +22,3 @@ services:
       - --file_schema_path=/output/schema.hcl
     networks:
       - ornn_network
-
-  mysql:
-    container_name: mysql
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: db_name
-    ports:
-      - 3306:3306
-    volumes:
-      - ./mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
-    networks:
-      - ornn_network
-
-networks:
-  ornn_network:
-    driver: bridge
