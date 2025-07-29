@@ -31,7 +31,7 @@ func Select(args []string, tpls []string, query string, selectSingle bool, struc
 func Insert(args []string, tpls []string, query string, insertMulti bool, structName, instanceName string) string {
 	var multiInsert, genArgs string
 	if insertMulti == true { // multi insert
-		queryVal := util.Util_ExportInsertQueryValues(query)
+		queryVal := util.ExportInsertQueryValues(query)
 		query = strings.TrimSuffix(query, ";")
 		query += "%s"
 		genArgs = genQuery_body_multiInsertProc(args)

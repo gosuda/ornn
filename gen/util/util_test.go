@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUtil_ClearInQuot(t *testing.T) {
-	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len("'will delete'"))), Util_ClearInQuot("'will delete'"))
-	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len(`"will delete"`))), Util_ClearInQuot(`"will delete"`))
-	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len("`will delete`"))), Util_ClearInQuot("`will delete`"))
+func TestClearInQuot(t *testing.T) {
+	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len("'will delete'"))), ClearInQuot("'will delete'"))
+	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len(`"will delete"`))), ClearInQuot(`"will delete"`))
+	require.Equal(t, fmt.Sprintf("%s", strings.Repeat(" ", len("`will delete`"))), ClearInQuot("`will delete`"))
 }
 
-func TestUtil_SplitByDelimiter(t *testing.T) {
+func TestSplitByDelimiter(t *testing.T) {
 	for _, test := range []struct {
 		input        string
 		expectFront  string
@@ -64,13 +64,13 @@ func TestUtil_SplitByDelimiter(t *testing.T) {
 			"WHERE field_name_1 = ? and field_name_2 = '?' and field_name_3 = \"?\" and field_name_4 = `?`;",
 		},
 	} {
-		retFront, retBehind := Util_SplitByDelimiter(test.input, "where")
+		retFront, retBehind := SplitByDelimiter(test.input, "where")
 		require.Equal(t, test.expectFront, retFront)
 		require.Equal(t, test.expectBehind, retBehind)
 	}
 }
 
-func TestUtil_ExportBetweenDelimiter(t *testing.T) {
+func TestExportBetweenDelimiter(t *testing.T) {
 	for _, test := range []struct {
 		input   string
 		expects []string
@@ -89,13 +89,13 @@ func TestUtil_ExportBetweenDelimiter(t *testing.T) {
 		{"'%a'%b%c%d%'e%'", []string{"b", "d"}},
 		{"'%a%b%c%d%e%'", []string{}},
 	} {
-		rets, err := Util_ExportBetweenDelimiter(test.input, "%")
+		rets, err := ExportBetweenDelimiter(test.input, "%")
 		require.NoError(t, err)
 		require.Equal(t, test.expects, rets)
 	}
 }
 
-func TestUtil_ReplaceBetweenDelimiter(t *testing.T) {
+func TestReplaceBetweenDelimiter(t *testing.T) {
 	for _, test := range []struct {
 		input  string
 		expect string
@@ -114,12 +114,12 @@ func TestUtil_ReplaceBetweenDelimiter(t *testing.T) {
 		{"'%a'%b%c%d%'e%'", "'%a' c 'e%'"},
 		{"'%a%b%c%d%e%'", "'%a%b%c%d%e%'"},
 	} {
-		ret := Util_ReplaceBetweenDelimiter(test.input, "%", " ")
+		ret := ReplaceBetweenDelimiter(test.input, "%", " ")
 		require.Equal(t, ret, test.expect)
 	}
 }
 
-func TestUtil_ClearDelimiter(t *testing.T) {
+func TestClearDelimiter(t *testing.T) {
 	for _, test := range []struct {
 		input  string
 		expect string
@@ -131,12 +131,12 @@ func TestUtil_ClearDelimiter(t *testing.T) {
 		{"%%%", ""},
 		{"a%a'%a'a%a", "aa'%a'aa"},
 	} {
-		ret := Util_ClearDelimiter(test.input, "%")
+		ret := ClearDelimiter(test.input, "%")
 		require.Equal(t, test.expect, ret)
 	}
 }
 
-func TestUtil_ReplaceInDelimiter(t *testing.T) {
+func TestReplaceInDelimiter(t *testing.T) {
 	for _, test := range []struct {
 		input     string
 		expect    string
@@ -153,12 +153,12 @@ func TestUtil_ReplaceInDelimiter(t *testing.T) {
 		{"%ab%", "ab", "%", "/"},
 		{"%a/b%c/d%e/f%", "bc/df", "%", "/"},
 	} {
-		ret := Util_ReplaceInDelimiter(test.input, test.delimiter, test.spliter)
+		ret := ReplaceInDelimiter(test.input, test.delimiter, test.spliter)
 		require.Equal(t, test.expect, ret)
 	}
 }
 
-func TestUtil_ExportInsertQueryValues(t *testing.T) {
+func TestExportInsertQueryValues(t *testing.T) {
 	for _, test := range []struct {
 		input  string
 		expect string
@@ -192,7 +192,7 @@ func TestUtil_ExportInsertQueryValues(t *testing.T) {
 			"?, ?, ?, ?",
 		},
 	} {
-		ret := Util_ExportInsertQueryValues(test.input)
+		ret := ExportInsertQueryValues(test.input)
 		require.Equal(t, test.expect, ret)
 	}
 }

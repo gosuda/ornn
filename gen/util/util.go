@@ -14,185 +14,176 @@ const (
 	TplSplit     = "/"
 )
 
-func Util_ClearInQuot(input string) (output string) {
-	var inQuotSingle, inQuotDouble, inQuotApostrophe bool
+// ClearInQuot replaces all characters inside quotes with spaces.
+func ClearInQuot(s string) string {
+	var inSingle, inDouble, inBacktick bool
+	var out strings.Builder
+	out.Grow(len(s))
 
-	for i := 0; i < len(input); i++ {
-		one := input[i : i+1]
-
-		find := false
-		if one == "'" {
-			find = true
-			inQuotSingle = !inQuotSingle
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		switch ch {
+		case '\'':
+			inSingle = !inSingle
+			out.WriteByte(' ')
+		case '"':
+			inDouble = !inDouble
+			out.WriteByte(' ')
+		case '`':
+			inBacktick = !inBacktick
+			out.WriteByte(' ')
+		default:
+			if inSingle || inDouble || inBacktick {
+				out.WriteByte(' ')
+			} else {
+				out.WriteByte(ch)
+			}
 		}
-		if one == "\"" {
-			find = true
-			inQuotDouble = !inQuotDouble
-		}
-		if one == "`" {
-			find = true
-			inQuotApostrophe = !inQuotApostrophe
-		}
-
-		if inQuotSingle == true ||
-			inQuotDouble == true ||
-			inQuotApostrophe == true ||
-			find == true {
-			output += " "
-			continue
-		}
-
-		output += one
 	}
-	return output
+	return out.String()
 }
 
-func Util_SplitByDelimiter(sql, delimiter string) (before, after string) {
-	sqlLower := strings.ToLower(sql)
-	sqlLower = Util_ClearInQuot(sqlLower)
-
-	pos := strings.Index(sqlLower, delimiter)
-	if pos == -1 {
-		return sql, ""
+// SplitByDelimiter splits SQL into two parts at the first occurrence of delimiter.
+func SplitByDelimiter(sql, delimiter string) (before, after string) {
+	cleaned := ClearInQuot(strings.ToLower(sql))
+	if pos := strings.Index(cleaned, delimiter); pos != -1 {
+		return sql[:pos], sql[pos:]
 	}
-	return sql[:pos], sql[pos:]
+	return sql, ""
 }
 
-func Util_ExportBetweenDelimiter(input string, delimiter string) (outputs []string, err error) {
-	input_withoutQuot := Util_ClearInQuot(input)
-
-	var in bool
-	var buf string
-	outputs = make([]string, 0, 10)
+// ExportBetweenDelimiter extracts all values between delimiters and checks for duplicates.
+func ExportBetweenDelimiter(input, delimiter string) ([]string, error) {
+	cleaned := ClearInQuot(input)
+	var outputs []string
+	var buf strings.Builder
+	in := false
 
 	for i := 0; i < len(input); i++ {
-		at := input[i : i+1]
-		quat := input_withoutQuot[i : i+1]
-
-		if quat == delimiter {
-			if in == true {
-				for _, name := range outputs {
-					if name == buf {
-						return nil, fmt.Errorf("duplicate field name | field name : %s", name)
+		ch, qch := input[i], cleaned[i]
+		if string(qch) == delimiter {
+			if in {
+				val := buf.String()
+				for _, existing := range outputs {
+					if existing == val {
+						return nil, fmt.Errorf("duplicate field name: %s", val)
 					}
 				}
-				outputs = append(outputs, buf)
-				buf = ""
+				outputs = append(outputs, val)
+				buf.Reset()
 			}
 			in = !in
 			continue
 		}
-		if in == true {
-			buf += at
+		if in {
+			buf.WriteByte(ch)
 		}
 	}
 	return outputs, nil
 }
 
-func Util_ReplaceBetweenDelimiter(input string, delimiter string, delimiterAfter string) (output string) {
-	input_withoutQuot := Util_ClearInQuot(input)
+// ReplaceBetweenDelimiter replaces content inside delimiters with a fixed string.
+func ReplaceBetweenDelimiter(input, delimiter, replace string) string {
+	cleaned := ClearInQuot(input)
+	var out strings.Builder
+	in := false
 
-	var in bool
 	for i := 0; i < len(input); i++ {
-		at := input[i : i+1]
-		quat := input_withoutQuot[i : i+1]
-
-		if quat == delimiter {
-			if in == true {
-				output += delimiterAfter
+		ch, qch := input[i], cleaned[i]
+		if string(qch) == delimiter {
+			if in {
+				out.WriteString(replace)
 			}
 			in = !in
 			continue
 		}
-		if in == false {
-			output += at
+		if !in {
+			out.WriteByte(ch)
 		}
 	}
-	return output
+	return out.String()
 }
 
-func Util_ClearDelimiter(input string, delimiter string) (output string) {
-	input_withoutQuot := Util_ClearInQuot(input)
+// ClearDelimiter removes only the delimiter characters, preserving the original string.
+func ClearDelimiter(input, delimiter string) string {
+	cleaned := ClearInQuot(input)
+	var out strings.Builder
 	for i := 0; i < len(input); i++ {
-		at := input[i : i+1]
-		if input_withoutQuot[i:i+1] == delimiter {
-			continue
+		if string(cleaned[i]) != delimiter {
+			out.WriteByte(input[i])
 		}
-		output += at
 	}
-	return output
+	return out.String()
 }
 
-func Util_ReplaceInDelimiter(input string, delimiter string, spliter string) (output string) {
-	//  xxxx#AAAA#xxxx 		-> xxxxAAAAxxxx
-	//  xxxx#AAAA/BBBB#xxxx -> xxxxBBBBxxxx
-	input_withoutQuot := Util_ClearInQuot(input)
+// ReplaceInDelimiter keeps only the last segment after a splitter inside the delimiter.
+func ReplaceInDelimiter(input, delimiter, splitter string) string {
+	// e.g., xxxx#AAAA#xxxx -> xxxxAAAAxxxx
+	//       xxxx#AAAA/BBBB#xxxx -> xxxxBBBBxxxx
+	cleaned := ClearInQuot(input)
+	var out, buf strings.Builder
+	in := false
 
-	var buf string
-	var in bool
 	for i := 0; i < len(input); i++ {
-		at := input[i : i+1]
-		quat := input_withoutQuot[i : i+1]
-
-		if quat == delimiter {
+		ch, qch := input[i], cleaned[i]
+		if string(qch) == delimiter {
 			in = !in
-			if in == true { // 구분자 진입 시점
-				buf = ""
-			} else { // 구분자 탈출 시점
-				output += buf
+			if in {
+				buf.Reset() // enter
+			} else {
+				out.WriteString(buf.String()) // exit
 			}
 			continue
 		}
 
-		if in == false {
-			output += at
+		if !in {
+			out.WriteByte(ch)
 		} else {
-			if quat == spliter {
-				buf = ""
-				continue
+			if string(qch) == splitter {
+				buf.Reset() // keep only after splitter
+			} else {
+				buf.WriteByte(ch)
 			}
-			buf += at
 		}
 	}
-	return output
+	return out.String()
 }
 
-// insert into `aaa` values (a, b, c, d) -> a, b, c, d 추출
-func Util_ExportInsertQueryValues(sqlInsert string) string {
-	sqlInsertLower := strings.ToLower(sqlInsert)
-	idxValues := strings.Index(sqlInsertLower, "values")
-	if idxValues == -1 {
+// ExportInsertQueryValues extracts the part inside the first VALUES (...) in an INSERT statement.
+func ExportInsertQueryValues(sqlInsert string) string {
+	lower := strings.ToLower(sqlInsert)
+	idx := strings.Index(lower, "values")
+	if idx == -1 {
 		return ""
 	}
 
 	var start, end int
-	for i := idxValues; i < len(sqlInsert); i++ {
-		if sqlInsert[i:i+1] == "(" {
-			start = i
-		}
-		if sqlInsert[i:i+1] == ")" {
+	for i := idx; i < len(sqlInsert); i++ {
+		switch sqlInsert[i] {
+		case '(':
+			if start == 0 {
+				start = i
+			}
+		case ')':
 			end = i
 		}
 	}
-	return sqlInsert[start+1 : end]
+	if start < end {
+		return sqlInsert[start+1 : end]
+	}
+	return ""
 }
 
-func Util_ConvFirstToUpper(input string) (output string) {
-	if len(input) == 0 {
+// ConvFirstToUpper makes the first character upper case.
+func ConvFirstToUpper(s string) string {
+	if len(s) == 0 {
 		return ""
 	}
-
-	output = strings.ToUpper(input[0:1]) + input[1:]
-	return output
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func Util_IsParserValArg(val []byte) bool {
-	s_val := string(val)
-	if len(s_val) < 3 { // :v0 | :v1 | :vN  임으로 3보다 작으면 추출 할 대상이 아님
-		return false
-	}
-	if s_val[0:2] != ":v" { // ? 종류인지 구분 = 아니면 무시
-		return false
-	}
-	return true
+// IsParserValArg checks if a value looks like a parser variable e.g. :v0, :v1
+func IsParserValArg(val []byte) bool {
+	s := string(val)
+	return len(s) >= 3 && strings.HasPrefix(s, ":v")
 }

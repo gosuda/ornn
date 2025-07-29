@@ -75,7 +75,7 @@ func (t *GenCode) code(config *config.Config, genQueries *GenQueries) (genCode s
 
 func (t *GenCode) genClass(name string) (genGroup *codegen.Struct) {
 	genGroup = &codegen.Struct{
-		Name: util.Util_ConvFirstToUpper(name),
+		Name: util.ConvFirstToUpper(name),
 	}
 
 	// root 구조체 연결을 위한 구조체 필드 변수 제작
@@ -110,7 +110,7 @@ func (t *GenCode) genFunc(groupName, queryName string, query *parser.ParsedQuery
 	funcQuery = &codegen.Function{
 		StructName: "t",
 		StructType: "*" + groupName,
-		FuncName:   util.Util_ConvFirstToUpper(queryName),
+		FuncName:   util.ConvFirstToUpper(queryName),
 	}
 
 	switch query.QueryType {
@@ -222,11 +222,11 @@ func (t *GenCode) genQuery_ret_error(funcQuery *codegen.Function) {
 
 func (t *GenCode) genQuery_struct_select(groupName string, funcQuery *codegen.Function, query *parser.ParsedQuery) (retStructName string) {
 	retStruct := &codegen.Struct{
-		Name: fmt.Sprintf("%s_%s", util.Util_ConvFirstToUpper(groupName), strings.ToLower(funcQuery.FuncName)),
+		Name: fmt.Sprintf("%s_%s", util.ConvFirstToUpper(groupName), strings.ToLower(funcQuery.FuncName)),
 	}
 	for _, r := range query.Ret {
 		retStruct.AddField(&codegen.Var{
-			Name: util.Util_ConvFirstToUpper(r.Name),
+			Name: util.ConvFirstToUpper(r.Name),
 			Type: r.GoType,
 		})
 	}
