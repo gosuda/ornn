@@ -6,11 +6,11 @@ import (
 
 	"strings"
 
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/gen/codegen"
-	"github.com/gokch/ornn/gen/template"
-	"github.com/gokch/ornn/gen/util"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/gen/codegen"
+	"github.com/gosuda/ornn/gen/template"
+	"github.com/gosuda/ornn/gen/util"
+	"github.com/gosuda/ornn/parser"
 )
 
 type GenCode struct {

@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gokch/ornn/cli"
+	"github.com/gosuda/ornn/cli"
 )
 
 func main() {
@@ -36,8 +36,8 @@ func main() {
 
 ## Build
 
-    go get github.com/gokch/ornn
-    cd $GOPATH/src/github.com/gokch/ornn
+    go get github.com/gosuda/ornn
+    cd $GOPATH/src/github.com/gosuda/ornn
     go build .
 
 

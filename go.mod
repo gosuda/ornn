@@ -1,10 +1,11 @@
-module github.com/gokch/ornn
+module github.com/gosuda/ornn
 
 go 1.22.1
 
 require (
 	github.com/CovenantSQL/sqlparser v0.0.0-20190618091803-c4a6cf6cebb6
 	github.com/go-sql-driver/mysql v1.7.0
+	github.com/gokch/ornn v0.0.0-20240529050331-61316563deab
 	github.com/hashicorp/hcl/v2 v2.15.0
 	github.com/lib/pq v1.10.7
 	github.com/mattn/go-sqlite3 v1.14.16
@@ -14,7 +15,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/biogo/store v0.0.0-20201120204734-aad293a2328f // indirect
 	github.com/cockroachdb/apd/v3 v3.1.0 // indirect
@@ -42,7 +42,6 @@ require (
 	google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84 // indirect
 	google.golang.org/grpc v1.38.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (

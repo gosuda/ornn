@@ -12,7 +12,7 @@
 			},
 			{
 				"alias": ".",
-				"path": "github.com/gokch/ornn/db"
+				"path": "github.com/gosuda/ornn/db"
 			}
 		]
 	},
