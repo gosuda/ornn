@@ -3,7 +3,7 @@ package gen
 import (
 	"database/sql"
 
-	"github.com/gokch/ornn/db"
+	"github.com/gosuda/ornn/db"
 )
 
 func NewLogic(db *db.Conn) *Logic {

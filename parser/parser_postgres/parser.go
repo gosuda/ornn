@@ -7,8 +7,8 @@ import (
 	"ariga.io/atlas/sql/schema"
 	sqlparser "github.com/cockroachdb/cockroachdb-parser/pkg/sql/parser"
 	"github.com/cockroachdb/cockroachdb-parser/pkg/sql/sem/tree"
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/parser"
 )
 
 func New(sch *config.Schema) parser.Parser {

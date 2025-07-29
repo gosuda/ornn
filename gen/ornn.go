@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/gen/template"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/gen/template"
+	"github.com/gosuda/ornn/parser"
 )
 
 type ORNN struct {

@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1
-
-FROM golang:1.19 AS builder
+FROM golang:1.24 AS builder
 RUN apt-get update && apt-get install -y gcc-aarch64-linux-gnu
 
 ADD . /workspace

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"ariga.io/atlas/sql/schema"
-	"github.com/gokch/ornn/config/atlas"
+	"github.com/gosuda/ornn/config/atlas"
 )
 
 type Queries struct {

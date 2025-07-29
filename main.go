@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/gokch/ornn/cmd/ornn"
+	"github.com/gosuda/ornn/cmd/ornn"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 	"ariga.io/atlas/sql/postgres"
 	"ariga.io/atlas/sql/schema"
 	"ariga.io/atlas/sql/sqlite"
-	"github.com/gokch/ornn/db"
+	"github.com/gosuda/ornn/db"
 	"github.com/hashicorp/hcl/v2/hclparse"
 )
 

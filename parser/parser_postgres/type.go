@@ -3,7 +3,7 @@ package parser_postgres
 import (
 	"strings"
 
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/parser"
 )
 
 func (p *Parser) ConvType(dbType string) (genType string) {

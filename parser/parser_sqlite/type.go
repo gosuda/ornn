@@ -2,7 +2,7 @@ package parser_sqlite
 
 import (
 	"ariga.io/atlas/sql/schema"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/parser"
 )
 
 func (t *Parser) ConvType(colType *schema.ColumnType) (genType string) {

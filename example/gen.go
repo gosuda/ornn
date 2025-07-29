@@ -5,7 +5,8 @@ package gen
 
 import (
 	"fmt"
-	. "github.com/gokch/ornn/db"
+
+	. "github.com/gosuda/ornn/db"
 )
 
 type Gen struct {
@@ -50,7 +51,7 @@ func (t *User) Update(
 		set_pw,
 		where_seq,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -58,7 +59,7 @@ func (t *User) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -79,11 +80,11 @@ func (t *User) Insert(
 		val_name,
 		val_pw,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"INSERT INTO user VALUES (?, ?, ?, ?, ?)",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -91,7 +92,7 @@ func (t *User) Insert(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.LastInsertId()
 }
 
@@ -112,7 +113,7 @@ func (t *User) Select(
 	args := []interface{}{
 		where_seq,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"SELECT * FROM user WHERE seq = ?",
 	)
@@ -124,7 +125,7 @@ func (t *User) Select(
 		return nil, err
 	}
 	defer ret.Close()
-	
+
 	selects = make([]*User_select, 0, 100)
 	for ret.Next() {
 		scan := &User_select{}
@@ -134,7 +135,7 @@ func (t *User) Select(
 		}
 		selects = append(selects, scan)
 	}
-	
+
 	return selects, nil
 }
 
@@ -147,11 +148,11 @@ func (t *User) Delete(
 	args := []interface{}{
 		where_seq,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM user WHERE seq = ?",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -159,7 +160,6 @@ func (t *User) Delete(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
-

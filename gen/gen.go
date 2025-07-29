@@ -3,8 +3,8 @@ package gen
 import (
 	"fmt"
 
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/parser"
 )
 
 type Gen struct {

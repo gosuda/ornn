@@ -3,7 +3,7 @@ package db_postgres
 import (
 	"fmt"
 
-	"github.com/gokch/ornn/db"
+	"github.com/gosuda/ornn/db"
 	_ "github.com/lib/pq"
 )
 

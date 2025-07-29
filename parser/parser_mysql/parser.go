@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"ariga.io/atlas/sql/schema"
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/parser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/parser"
 	sqlparser "github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
 	_ "github.com/pingcap/tidb/parser/test_driver"

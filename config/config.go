@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"ariga.io/atlas/sql/schema"
-	"github.com/gokch/ornn/config/atlas"
+	"github.com/gosuda/ornn/config/atlas"
 )
 
 type Config struct {
@@ -40,7 +40,7 @@ func (t *Config) Init(dbType atlas.DbType, schema *schema.Schema, filePath, file
 
 	t.Global.Import = []*Import{ // TODO
 		{Alias: "", Path: "fmt"},
-		{Alias: ".", Path: "github.com/gokch/ornn/db"},
+		{Alias: ".", Path: "github.com/gosuda/ornn/db"},
 	}
 
 	// init schema

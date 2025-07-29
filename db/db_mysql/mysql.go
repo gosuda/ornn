@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gokch/ornn/db"
+	"github.com/gosuda/ornn/db"
 )
 
 func Dsn(id, pw, addr, port, dbName string) string {

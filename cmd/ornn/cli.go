@@ -5,7 +5,7 @@
 //	import (
 //		"os"
 //
-//	    ornn "https://github.com/gokch/ornn/cmd/ornn"
+//	    ornn "https://github.com/gosuda/ornn/cmd/ornn"
 //	)
 //
 //	func main() {
@@ -19,17 +19,17 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"ariga.io/atlas/sql/schema"
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/config/atlas"
-	"github.com/gokch/ornn/db"
-	"github.com/gokch/ornn/db/db_mysql"
-	"github.com/gokch/ornn/db/db_postgres"
-	"github.com/gokch/ornn/db/db_sqlite"
-	"github.com/gokch/ornn/gen"
-	"github.com/gokch/ornn/parser"
-	"github.com/gokch/ornn/parser/parser_mysql"
-	"github.com/gokch/ornn/parser/parser_postgres"
-	"github.com/gokch/ornn/parser/parser_sqlite"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/config/atlas"
+	"github.com/gosuda/ornn/db"
+	"github.com/gosuda/ornn/db/db_mysql"
+	"github.com/gosuda/ornn/db/db_postgres"
+	"github.com/gosuda/ornn/db/db_sqlite"
+	"github.com/gosuda/ornn/gen"
+	"github.com/gosuda/ornn/parser"
+	"github.com/gosuda/ornn/parser/parser_mysql"
+	"github.com/gosuda/ornn/parser/parser_postgres"
+	"github.com/gosuda/ornn/parser/parser_sqlite"
 	"github.com/spf13/cobra"
 )
 

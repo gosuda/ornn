@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gokch/ornn/config"
-	"github.com/gokch/ornn/config/atlas"
-	"github.com/gokch/ornn/db/db_mysql"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/config/atlas"
+	"github.com/gosuda/ornn/db/db_mysql"
 	tiparser "github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/stretchr/testify/require"

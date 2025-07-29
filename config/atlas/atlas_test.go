@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gokch/ornn/db/db_mysql"
-	"github.com/gokch/ornn/db/db_postgres"
+	"github.com/gosuda/ornn/db/db_mysql"
+	"github.com/gosuda/ornn/db/db_postgres"
 	"github.com/stretchr/testify/require"
 )
 
