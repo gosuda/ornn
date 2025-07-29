@@ -2,60 +2,64 @@ package template
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
 )
 
-func parseTemplate(fileName string, args map[string]interface{}) string {
-	path, _ := os.Getwd()
-	parse, err := template.New(fileName).ParseFiles(path + "/gen/template/" + fileName)
+// parseTemplate parses and executes a template string with given args.
+func parseTemplate(tmplStr string, args map[string]any) string {
+	tmpl, err := template.New(tmplStr).Parse(tmplStr)
 	if err != nil {
 		return ""
 	}
 	builder := &strings.Builder{}
-	parse.Execute(builder, args)
+	if err := tmpl.Execute(builder, args); err != nil {
+		return ""
+	}
 	return builder.String()
 }
 
-func genQuery_body_setArgs(_arrs_arg []string) (genArg string) {
-	var items string
-	items = genQuery_body_arg(_arrs_arg)
+// genQuery_body_setArgs generates Go code for args := []any{...}
+func genQuery_body_setArgs(args []string) string {
+	items := genQuery_body_arg(args)
 	if items != "" {
 		items += "\n"
 	}
-
-	return fmt.Sprintf(`args := []interface{}{%s}
-`,
-		items,
-	)
+	return fmt.Sprintf("args := []any{%s}\n", items)
 }
 
-func genQuery_body_arg(args []string) (ret string) {
+// genQuery_body_arg formats args as a comma-separated list with indentation
+func genQuery_body_arg(args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+	var b strings.Builder
 	for _, arg := range args {
-		ret += fmt.Sprintf("\n\t%s,", arg)
+		fmt.Fprintf(&b, "\n\t%s,", arg)
 	}
-	return ret
+	return b.String()
 }
 
-func genQuery_body_multiInsertProc(args []string) (multiInsertProc string) {
-	var checkLen string
-	for i, arg := range args {
-		checkLen += fmt.Sprintf("argLen != len(%s)", arg)
-		if i != len(args)-1 {
-			checkLen += fmt.Sprintf(" || ")
-		}
+// genQuery_body_multiInsertProc generates code for multi-insert procedure
+func genQuery_body_multiInsertProc(args []string) string {
+	if len(args) == 0 {
+		return ""
 	}
 
-	var append string
+	// checkLen: argLen != len(arg1) || argLen != len(arg2) ...
+	checkConds := make([]string, len(args))
 	for i, arg := range args {
-		append += fmt.Sprintf("%s[i]", arg)
-		if i != len(args)-1 {
-			append += fmt.Sprintf(",\n\t\t")
-		}
+		checkConds[i] = fmt.Sprintf("argLen != len(%s)", arg)
+	}
+	checkLen := strings.Join(checkConds, " || ")
+
+	// append part: arg1[i], arg2[i], ...
+	appendArgs := make([]string, len(args))
+	for i, arg := range args {
+		appendArgs[i] = fmt.Sprintf("%s[i]", arg)
 	}
 
-	multiInsertProc = fmt.Sprintf(`argLen := len(%s)
+	return fmt.Sprintf(`argLen := len(%s)
 if argLen == 0 {
 	return 0, fmt.Errorf("arg len is zero")
 }
@@ -63,7 +67,7 @@ if %s {
 	return 0, fmt.Errorf("arg len is not same")
 }
 
-args := make([]interface{}, 0, argLen*%d)
+args := make([]any, 0, argLen*%d)
 for i := 0; i < argLen; i++ {
 	args = append(args, I_to_arri(
 		%s,
@@ -73,10 +77,11 @@ for i := 0; i < argLen; i++ {
 		args[0],
 		checkLen,
 		len(args),
-		append)
-	return multiInsertProc
+		strings.Join(appendArgs, ",\n\t\t"),
+	)
 }
 
-func genQuery_body_multiInsert(query string) (multiInsert string) {
+// genQuery_body_multiInsert generates code snippet for multi insert SQL
+func genQuery_body_multiInsert(query string) string {
 	return fmt.Sprintf("\n\tstrings.Repeat(\", (%s)\", argLen-1),", query)
 }

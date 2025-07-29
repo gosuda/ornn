@@ -15,7 +15,7 @@ func Select(args []string, tpls []string, query string, selectSingle bool, struc
 		bodyRetDeclare = fmt.Sprintf("\n%s = make(%s, 0, 100)", retItemName, retItemType)
 		bodyRetSet = fmt.Sprintf("%s = append(%s, scan)", retItemName, retItemName)
 	}
-	return parseTemplate("func_select.template", map[string]interface{}{
+	return parseTemplate(SelectTmpl, map[string]interface{}{
 		"arg":      genQuery_body_setArgs(args),
 		"query":    query,
 		"tpl":      genQuery_body_arg(tpls),
@@ -39,7 +39,7 @@ func Insert(args []string, tpls []string, query string, insertMulti bool, struct
 	} else { // insert
 		genArgs = genQuery_body_setArgs(args)
 	}
-	return parseTemplate("func_insert.template", map[string]interface{}{
+	return parseTemplate(InsertTmpl, map[string]interface{}{
 		"arg":      genArgs,
 		"query":    query,
 		"tpl":      genQuery_body_arg(tpls),
@@ -50,7 +50,7 @@ func Insert(args []string, tpls []string, query string, insertMulti bool, struct
 }
 
 func Update(args []string, tpls []string, query string, structName, instanceName string) string {
-	return parseTemplate("func_update.template", map[string]interface{}{
+	return parseTemplate(UpdateTmpl, map[string]interface{}{
 		"query":    query,
 		"tpl":      genQuery_body_arg(tpls),
 		"arg":      genQuery_body_setArgs(args),
@@ -60,7 +60,7 @@ func Update(args []string, tpls []string, query string, structName, instanceName
 }
 
 func Delete(args []string, query string, tpls []string, structName, instanceName string) string {
-	return parseTemplate("func_delete.template", map[string]interface{}{
+	return parseTemplate(DeleteTmpl, map[string]interface{}{
 		"arg":      genQuery_body_setArgs(args),
 		"query":    query,
 		"tpl":      genQuery_body_arg(tpls),
