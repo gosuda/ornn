@@ -68,3 +68,10 @@ func Delete(args []string, query string, tpls []string, structName, instanceName
 		"instance": instanceName,
 	})
 }
+
+func UseCase(packageName, className string) string {
+	return parseTemplate(UseCaseTmpl, map[string]interface{}{
+		"package": packageName,
+		"class":   className,
+	})
+}

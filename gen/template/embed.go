@@ -2,14 +2,17 @@ package template
 
 import _ "embed"
 
-//go:embed func_insert.template
+//go:embed insert.template
 var InsertTmpl string
 
-//go:embed func_select.template
+//go:embed select.template
 var SelectTmpl string
 
-//go:embed func_update.template
+//go:embed update.template
 var UpdateTmpl string
 
-//go:embed func_delete.template
+//go:embed delete.template
 var DeleteTmpl string
+
+//go:embed use_case.template
+var UseCaseTmpl string
