@@ -144,12 +144,7 @@ func (t *Function) Code(w *Writer) {
 	}
 
 	code := t.InlineCode
-	if strings.HasPrefix(code, "\n") {
-		code = code[1:]
-	}
-	if strings.HasSuffix(code, "\n") {
-		code = code[:len(code)-1]
-	}
+	code = strings.Trim(code, "\n")
 
 	if code != "" {
 		w.W("%s\n", strings.ReplaceAll(code, "\n", "\n"+w.Indent()))
