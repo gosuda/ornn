@@ -1,0 +1,16 @@
+[DB]
+  Type = "mysql"
+  Path = "./"
+  Addr = "localhost"
+  Port = "3306"
+  User = "user"
+  Password = "1234"
+  Name = "testdb"
+
+[Gen]
+  SchemaPath = "./output/schema.hcl"
+  ConfigPath = "./output/config.json"
+  GenPath = "./output"
+  FileName = "gen.go"
+  PackageName = "gen"
+  ClassName = "Gen"

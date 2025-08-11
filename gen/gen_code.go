@@ -21,7 +21,6 @@ type GenCode struct {
 func (t *GenCode) code(config *config.Config, genQueries *GenQueries) (genCode string, err error) {
 	t.conf = config
 	t.codeGen = &codegen.CodeGen{}
-	t.codeGen.DoNotEdit = t.conf.Global.DoNotEdit
 	t.codeGen.Package = t.conf.Global.PackageName
 	for _, imp := range config.Global.Import {
 		t.codeGen.AddImport(&codegen.Import{

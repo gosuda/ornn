@@ -13,10 +13,9 @@ type Item interface {
 // global
 
 type Global struct {
-	DoNotEdit string
-	Package   string
-	Imports   Imports
-	Items     []Item
+	Package string
+	Imports Imports
+	Items   []Item
 }
 
 func (t *Global) AddImport(item *Import) {
@@ -31,9 +30,9 @@ func (t *Global) AddItem(i Item) {
 }
 
 func (t *Global) Code(w *Writer) {
-	w.W("%s\n", t.DoNotEdit)         // comment ( do not edit )
-	w.W("package %s\n\n", t.Package) // package
-	t.Imports.Code(w)                // import
+	w.W("%s\n", "// Code generated - DO NOT EDIT.\n// This file is a generated and any changes will be lost.\n") // comment ( do not edit )
+	w.W("package %s\n\n", t.Package)                                                                             // package
+	t.Imports.Code(w)                                                                                            // import
 
 	for _, pt := range t.Items {
 		pt.Code(w)
@@ -333,7 +332,7 @@ func (t *Imports) Code(w *Writer) {
 
 type Import struct {
 	Path  string
-	Alias string // 기본 ""(없음)  or . or  임의이름
+	Alias string
 }
 
 func (t *Import) Code(w *Writer) {

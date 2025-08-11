@@ -13,7 +13,7 @@ import (
 )
 
 func TestParseMysqlSelect(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
+	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
 	require.NoError(t, err)
 
 	atlas := atlas.New(atlas.DbTypeMaria, db)
@@ -68,7 +68,7 @@ func TestParseMysqlSelect(t *testing.T) {
 }
 
 func TestParseMysqlInsert(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
+	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
 	require.NoError(t, err)
 	atlas := atlas.New(atlas.DbTypeMaria, db)
 	sc, err := atlas.InspectSchema()
@@ -85,7 +85,7 @@ func TestParseMysqlInsert(t *testing.T) {
 }
 
 func TestParseMysqlUpdate(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "1234", "db_name")
+	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
 	require.NoError(t, err)
 	atlas := atlas.New(atlas.DbTypeMaria, db)
 	sc, err := atlas.InspectSchema()

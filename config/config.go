@@ -30,13 +30,12 @@ func (t *Config) Load(path string) error {
 	return nil
 }
 
-func (t *Config) Init(dbType atlas.DbType, schema *schema.Schema, filePath, fileName, packageName, className, doNotEdit string) error {
+func (t *Config) Init(dbType atlas.DbType, schema *schema.Schema, filePath, fileName, packageName, className string) error {
 	// init global config
 	t.Global.FilePath = filePath
 	t.Global.FileName = fileName
 	t.Global.PackageName = packageName
 	t.Global.ClassName = className
-	t.Global.DoNotEdit = doNotEdit
 
 	t.Global.Import = []*Import{ // TODO
 		{Alias: "", Path: "fmt"},
@@ -69,7 +68,6 @@ type Global struct {
 	FilePath string `json:"file_path"`
 	FileName string `json:"file_name"`
 
-	DoNotEdit   string `json:"do_not_edit"`
 	PackageName string `json:"package_name"`
 	ClassName   string `json:"class_name"`
 

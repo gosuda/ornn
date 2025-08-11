@@ -11,7 +11,7 @@ import (
 )
 
 func TestMysql(t *testing.T) {
-	db, err := db_mysql.New("127.0.0.1", "3306", "root", "951753ck", "test")
+	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "951753ck", "test"), "test")
 	require.NoError(t, err)
 
 	atl := &Atlas{}
@@ -33,7 +33,7 @@ func TestMysql(t *testing.T) {
 }
 
 func TestPostgres(t *testing.T) {
-	db, err := db_postgres.New("127.0.0.1", "5432", "postgres", "", "postgres")
+	db, err := db_postgres.New(db_postgres.Dsn("127.0.0.1", "5432", "postgres", "", "postgres"), "postgres")
 	require.NoError(t, err)
 
 	atl := &Atlas{}
