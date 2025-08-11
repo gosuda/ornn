@@ -13,7 +13,7 @@
 //			os.Exit(1)
 //		}
 //	}
-package ornn
+package main
 
 import (
 	"os"
@@ -68,7 +68,7 @@ func main() {
 func rootRun(cmd *cobra.Command, args []string) {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load config")
+		log.Panic().Err(err).Msg("Failed to load config")
 	}
 	atlasDbType := atlas.DbTypeStrReverse[cfg.DB.Type]
 
@@ -82,10 +82,10 @@ func rootRun(cmd *cobra.Command, args []string) {
 	case atlas.DbTypeSQLite:
 		conn, err = db_sqlite.New(cfg.DB.Path)
 	default:
-		log.Fatal().Msgf("invalid db type: %s", cfg.DB.Type)
+		log.Panic().Msgf("invalid db type: %s", cfg.DB.Type)
 	}
 	if err != nil {
-		log.Fatal().Err(err).Msg("db connect error")
+		log.Panic().Err(err).Msg("db connect error")
 	}
 
 	// 2. init schema from atl
@@ -93,40 +93,40 @@ func rootRun(cmd *cobra.Command, args []string) {
 	atl := atlas.New(atlasDbType, conn)
 	if loadExistSchemaFile { // load from existing schema file
 		if sch, err = atl.Load(cfg.Gen.SchemaPath); err != nil {
-			log.Fatal().Err(err).Msg("schema load error")
+			log.Panic().Err(err).Msg("schema load error")
 		}
 		// migrate db from file
 		if err = atl.MigrateSchema(sch); err != nil {
-			log.Fatal().Err(err).Msg("atlas migrate error")
+			log.Panic().Err(err).Msg("atlas migrate error")
 		}
 		// inspect schema fron migrated db
 		if sch, err = atl.InspectSchema(); err != nil {
-			log.Fatal().Err(err).Msg("atlas inspect error")
+			log.Panic().Err(err).Msg("atlas inspect error")
 		}
 	} else {
 		if sch, err = atl.InspectSchema(); err != nil {
-			log.Fatal().Err(err).Msg("atlas inspect error")
+			log.Panic().Err(err).Msg("atlas inspect error")
 		}
 		if err = atl.Save(cfg.Gen.SchemaPath, sch); err != nil {
-			log.Fatal().Err(err).Msg("schema save error")
+			log.Panic().Err(err).Msg("schema save error")
 		}
 	}
 
 	// 3. set config
 	var conf = &config.Config{}
 	if loadExistConfigFile { // load from existing config file
-		if err = conf.Load(configFilePath); err != nil { // load
-			log.Fatal().Err(err).Msg("config load error")
+		if err = conf.Load(cfg.Gen.ConfigPath); err != nil { // load
+			log.Panic().Err(err).Msg("config load error")
 		}
 		if err = conf.Init(atlasDbType, sch, cfg.Gen.GenPath, cfg.Gen.FileName, cfg.Gen.PackageName, cfg.Gen.ClassName); err != nil { // init
-			log.Fatal().Err(err).Msg("config init error")
+			log.Panic().Err(err).Msg("config init error")
 		}
 	} else {
 		if err = conf.Init(atlasDbType, sch, cfg.Gen.GenPath, cfg.Gen.FileName, cfg.Gen.PackageName, cfg.Gen.ClassName); err != nil { // init
-			log.Fatal().Err(err).Msg("config init error")
+			log.Panic().Err(err).Msg("config init error")
 		}
-		if err = conf.Save(configFilePath); err != nil { // save
-			log.Fatal().Err(err).Msg("config save error")
+		if err = conf.Save(cfg.Gen.ConfigPath); err != nil { // save
+			log.Panic().Err(err).Msg("config save error")
 		}
 	}
 
@@ -140,7 +140,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	case atlas.DbTypeSQLite:
 		psr = parser_sqlite.New(&conf.Schema)
 	default:
-		log.Fatal().Msgf("invalid db type: %s", cfg.DB.Type)
+		log.Panic().Msgf("invalid db type: %s", cfg.DB.Type)
 	}
 
 	// 5. gen code
@@ -148,7 +148,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	{
 		gen.Init(conf, psr)
 		if err = gen.GenCode(); err != nil { // code generate
-			log.Fatal().Err(err).Msg("code generate error")
+			log.Panic().Err(err).Msg("code generate error")
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package ornn
+package main
 
 import (
 	"github.com/knadh/koanf"
@@ -44,7 +44,7 @@ func loadConfig() (*Config, error) {
 		return nil, err
 	}
 
-	if err := k.Unmarshal("Gen", &config.DB); err != nil {
+	if err := k.Unmarshal("Gen", &config.Gen); err != nil {
 		return nil, err
 	}
 
