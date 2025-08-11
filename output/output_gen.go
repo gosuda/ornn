@@ -6,7 +6,7 @@ package gen
 import (
 	"fmt"
 	"time"
-	
+
 	. "github.com/gosuda/ornn/db"
 )
 
@@ -53,11 +53,11 @@ func (t *Org_members) Insert(
 		val_role,
 		val_created_at,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"INSERT INTO org_members VALUES (?, ?, ?, ?)",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -65,7 +65,7 @@ func (t *Org_members) Insert(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.LastInsertId()
 }
 
@@ -81,7 +81,7 @@ func (t *Org_members) Select() (
 	err error,
 ) {
 	args := []any{}
-	
+
 	sql := fmt.Sprintf(
 		"SELECT * FROM org_members",
 	)
@@ -93,7 +93,7 @@ func (t *Org_members) Select() (
 		return nil, err
 	}
 	defer ret.Close()
-	
+
 	selects = make([]*Org_members_select, 0, 100)
 	for ret.Next() {
 		scan := &Org_members_select{}
@@ -103,7 +103,7 @@ func (t *Org_members) Select() (
 		}
 		selects = append(selects, scan)
 	}
-	
+
 	return selects, nil
 }
 
@@ -112,11 +112,11 @@ func (t *Org_members) Delete() (
 	err error,
 ) {
 	args := []any{}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM org_members",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -124,7 +124,7 @@ func (t *Org_members) Delete() (
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -146,7 +146,7 @@ func (t *Org_members) Update(
 		set_role,
 		set_created_at,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -154,7 +154,7 @@ func (t *Org_members) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -168,79 +168,6 @@ type Organizations struct {
 	job *Job
 }
 
-func (t *Organizations) Insert(
-	val_id uint64,
-	val_name string,
-	val_owner_id uint64,
-	val_created_at time.Time,
-) (
-	lastInsertId int64,
-	err error,
-) {
-	args := []any{
-		val_id,
-		val_name,
-		val_owner_id,
-		val_created_at,
-	}
-	
-	sql := fmt.Sprintf(
-		"INSERT INTO organizations VALUES (?, ?, ?, ?)",
-	)
-	
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-	
-	return exec.LastInsertId()
-}
-
-type Organizations_select struct {
-	Id         uint64
-	Name       string
-	Owner_id   uint64
-	Created_at time.Time
-}
-
-func (t *Organizations) Select(
-	where_id uint64,
-) (
-	selects []*Organizations_select,
-	err error,
-) {
-	args := []any{
-		where_id,
-	}
-	
-	sql := fmt.Sprintf(
-		"SELECT * FROM organizations WHERE id = ?",
-	)
-	ret, err := t.job.Query(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer ret.Close()
-	
-	selects = make([]*Organizations_select, 0, 100)
-	for ret.Next() {
-		scan := &Organizations_select{}
-		err := ret.Scan(scan)
-		if err != nil {
-			return nil, err
-		}
-		selects = append(selects, scan)
-	}
-	
-	return selects, nil
-}
-
 func (t *Organizations) Delete(
 	where_id uint64,
 ) (
@@ -250,11 +177,11 @@ func (t *Organizations) Delete(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM organizations WHERE id = ?",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -262,7 +189,7 @@ func (t *Organizations) Delete(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -286,7 +213,7 @@ func (t *Organizations) Update(
 		set_created_at,
 		where_id,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -294,8 +221,81 @@ func (t *Organizations) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
+}
+
+func (t *Organizations) Insert(
+	val_id uint64,
+	val_name string,
+	val_owner_id uint64,
+	val_created_at time.Time,
+) (
+	lastInsertId int64,
+	err error,
+) {
+	args := []any{
+		val_id,
+		val_name,
+		val_owner_id,
+		val_created_at,
+	}
+
+	sql := fmt.Sprintf(
+		"INSERT INTO organizations VALUES (?, ?, ?, ?)",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.LastInsertId()
+}
+
+type Organizations_select struct {
+	Id         uint64
+	Name       string
+	Owner_id   uint64
+	Created_at time.Time
+}
+
+func (t *Organizations) Select(
+	where_id uint64,
+) (
+	selects []*Organizations_select,
+	err error,
+) {
+	args := []any{
+		where_id,
+	}
+
+	sql := fmt.Sprintf(
+		"SELECT * FROM organizations WHERE id = ?",
+	)
+	ret, err := t.job.Query(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer ret.Close()
+
+	selects = make([]*Organizations_select, 0, 100)
+	for ret.Next() {
+		scan := &Organizations_select{}
+		err := ret.Scan(scan)
+		if err != nil {
+			return nil, err
+		}
+		selects = append(selects, scan)
+	}
+
+	return selects, nil
 }
 
 func (t *Projects) Init(
@@ -329,11 +329,11 @@ func (t *Projects) Insert(
 		val_created_at,
 		val_updated_at,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"INSERT INTO projects VALUES (?, ?, ?, ?, ?, ?, ?)",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -341,7 +341,7 @@ func (t *Projects) Insert(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.LastInsertId()
 }
 
@@ -364,7 +364,7 @@ func (t *Projects) Select(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"SELECT * FROM projects WHERE id = ?",
 	)
@@ -376,7 +376,7 @@ func (t *Projects) Select(
 		return nil, err
 	}
 	defer ret.Close()
-	
+
 	selects = make([]*Projects_select, 0, 100)
 	for ret.Next() {
 		scan := &Projects_select{}
@@ -386,7 +386,7 @@ func (t *Projects) Select(
 		}
 		selects = append(selects, scan)
 	}
-	
+
 	return selects, nil
 }
 
@@ -399,11 +399,11 @@ func (t *Projects) Delete(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM projects WHERE id = ?",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -411,7 +411,7 @@ func (t *Projects) Delete(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -441,7 +441,7 @@ func (t *Projects) Update(
 		set_updated_at,
 		where_id,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -449,7 +449,7 @@ func (t *Projects) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -472,11 +472,11 @@ func (t *Tasks) Delete(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM tasks WHERE id = ?",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -484,7 +484,7 @@ func (t *Tasks) Delete(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -520,7 +520,7 @@ func (t *Tasks) Update(
 		set_updated_at,
 		where_id,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -528,7 +528,7 @@ func (t *Tasks) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -559,11 +559,11 @@ func (t *Tasks) Insert(
 		val_created_at,
 		val_updated_at,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -571,7 +571,7 @@ func (t *Tasks) Insert(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.LastInsertId()
 }
 
@@ -597,7 +597,7 @@ func (t *Tasks) Select(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"SELECT * FROM tasks WHERE id = ?",
 	)
@@ -609,7 +609,7 @@ func (t *Tasks) Select(
 		return nil, err
 	}
 	defer ret.Close()
-	
+
 	selects = make([]*Tasks_select, 0, 100)
 	for ret.Next() {
 		scan := &Tasks_select{}
@@ -619,7 +619,7 @@ func (t *Tasks) Select(
 		}
 		selects = append(selects, scan)
 	}
-	
+
 	return selects, nil
 }
 
@@ -631,41 +631,6 @@ func (t *Users) Init(
 
 type Users struct {
 	job *Job
-}
-
-func (t *Users) Insert(
-	val_id uint64,
-	val_email string,
-	val_username string,
-	val_status interface{},
-	val_created_at time.Time,
-	val_updated_at time.Time,
-) (
-	lastInsertId int64,
-	err error,
-) {
-	args := []any{
-		val_id,
-		val_email,
-		val_username,
-		val_status,
-		val_created_at,
-		val_updated_at,
-	}
-	
-	sql := fmt.Sprintf(
-		"INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)",
-	)
-	
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-	
-	return exec.LastInsertId()
 }
 
 type Users_select struct {
@@ -686,7 +651,7 @@ func (t *Users) Select(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"SELECT * FROM users WHERE id = ?",
 	)
@@ -698,7 +663,7 @@ func (t *Users) Select(
 		return nil, err
 	}
 	defer ret.Close()
-	
+
 	selects = make([]*Users_select, 0, 100)
 	for ret.Next() {
 		scan := &Users_select{}
@@ -708,7 +673,7 @@ func (t *Users) Select(
 		}
 		selects = append(selects, scan)
 	}
-	
+
 	return selects, nil
 }
 
@@ -721,11 +686,11 @@ func (t *Users) Delete(
 	args := []any{
 		where_id,
 	}
-	
+
 	sql := fmt.Sprintf(
 		"DELETE FROM users WHERE id = ?",
 	)
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -733,7 +698,7 @@ func (t *Users) Delete(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
@@ -761,7 +726,7 @@ func (t *Users) Update(
 		set_updated_at,
 		where_id,
 	}
-	
+
 	exec, err := t.job.Exec(
 		sql,
 		args...,
@@ -769,7 +734,41 @@ func (t *Users) Update(
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return exec.RowsAffected()
 }
 
+func (t *Users) Insert(
+	val_id uint64,
+	val_email string,
+	val_username string,
+	val_status interface{},
+	val_created_at time.Time,
+	val_updated_at time.Time,
+) (
+	lastInsertId int64,
+	err error,
+) {
+	args := []any{
+		val_id,
+		val_email,
+		val_username,
+		val_status,
+		val_created_at,
+		val_updated_at,
+	}
+
+	sql := fmt.Sprintf(
+		"INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.LastInsertId()
+}
