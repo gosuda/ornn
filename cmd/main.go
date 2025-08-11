@@ -55,7 +55,7 @@ var (
 func init() {
 	fs := rootCmd.PersistentFlags()
 	fs.StringVarP(&configFilePath, "config", "c", "config.toml", "Path to config file")
-	fs.BoolVar(&loadExistSchemaFile, "file_schema_load", false, "load schema from existing file and migrate database")
+	fs.BoolVar(&loadExistSchemaFile, "file_schema_load", true, "load schema from existing file and migrate database")
 	fs.BoolVar(&loadExistConfigFile, "file_config_load", false, "load config from existing file")
 }
 
@@ -151,4 +151,6 @@ func rootRun(cmd *cobra.Command, args []string) {
 			log.Panic().Err(err).Msg("code generate error")
 		}
 	}
+	log.Info().Str("generate path", cfg.Gen.GenPath).Msg("Code generated Succeed")
+
 }

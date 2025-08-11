@@ -1,0 +1,136 @@
+{
+	"global": {
+		"file_path": "../output/output_",
+		"file_name": "gen.go",
+		"package_name": "gen",
+		"class_name": "Gen",
+		"import": [
+			{
+				"alias": "",
+				"path": "fmt"
+			},
+			{
+				"alias": "",
+				"path": "time"
+			},
+			{
+				"alias": ".",
+				"path": "github.com/gosuda/ornn/db"
+			}
+		]
+	},
+	"queries": {
+		"class": {
+			"org_members": [
+				{
+					"name": "insert",
+					"comment": "default query - insert",
+					"sql": "INSERT INTO org_members VALUES (?, ?, ?, ?)"
+				},
+				{
+					"name": "select",
+					"comment": "default query - select",
+					"sql": "SELECT * FROM org_members"
+				},
+				{
+					"name": "delete",
+					"comment": "default query - delete",
+					"sql": "DELETE FROM org_members"
+				},
+				{
+					"name": "update",
+					"comment": "default query - update",
+					"sql": "UPDATE org_members SET org_id = ?, user_id = ?, role = ?, created_at = ?"
+				}
+			],
+			"organizations": [
+				{
+					"name": "insert",
+					"comment": "default query - insert",
+					"sql": "INSERT INTO organizations VALUES (?, ?, ?, ?)"
+				},
+				{
+					"name": "select",
+					"comment": "default query - select",
+					"sql": "SELECT * FROM organizations WHERE id = ?"
+				},
+				{
+					"name": "delete",
+					"comment": "default query - delete",
+					"sql": "DELETE FROM organizations WHERE id = ?"
+				},
+				{
+					"name": "update",
+					"comment": "default query - update",
+					"sql": "UPDATE organizations SET id = ?, name = ?, owner_id = ?, created_at = ? WHERE id = ?"
+				}
+			],
+			"projects": [
+				{
+					"name": "insert",
+					"comment": "default query - insert",
+					"sql": "INSERT INTO projects VALUES (?, ?, ?, ?, ?, ?, ?)"
+				},
+				{
+					"name": "select",
+					"comment": "default query - select",
+					"sql": "SELECT * FROM projects WHERE id = ?"
+				},
+				{
+					"name": "delete",
+					"comment": "default query - delete",
+					"sql": "DELETE FROM projects WHERE id = ?"
+				},
+				{
+					"name": "update",
+					"comment": "default query - update",
+					"sql": "UPDATE projects SET id = ?, org_id = ?, name = ?, slug = ?, status = ?, created_at = ?, updated_at = ? WHERE id = ?"
+				}
+			],
+			"tasks": [
+				{
+					"name": "insert",
+					"comment": "default query - insert",
+					"sql": "INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+				},
+				{
+					"name": "select",
+					"comment": "default query - select",
+					"sql": "SELECT * FROM tasks WHERE id = ?"
+				},
+				{
+					"name": "delete",
+					"comment": "default query - delete",
+					"sql": "DELETE FROM tasks WHERE id = ?"
+				},
+				{
+					"name": "update",
+					"comment": "default query - update",
+					"sql": "UPDATE tasks SET id = ?, project_id = ?, assignee_id = ?, title = ?, description = ?, priority = ?, status = ?, due_date = ?, created_at = ?, updated_at = ? WHERE id = ?"
+				}
+			],
+			"users": [
+				{
+					"name": "insert",
+					"comment": "default query - insert",
+					"sql": "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)"
+				},
+				{
+					"name": "select",
+					"comment": "default query - select",
+					"sql": "SELECT * FROM users WHERE id = ?"
+				},
+				{
+					"name": "delete",
+					"comment": "default query - delete",
+					"sql": "DELETE FROM users WHERE id = ?"
+				},
+				{
+					"name": "update",
+					"comment": "default query - update",
+					"sql": "UPDATE users SET id = ?, email = ?, username = ?, status = ?, created_at = ?, updated_at = ? WHERE id = ?"
+				}
+			]
+		}
+	}
+}

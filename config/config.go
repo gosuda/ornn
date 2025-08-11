@@ -39,6 +39,7 @@ func (t *Config) Init(dbType atlas.DbType, schema *schema.Schema, filePath, file
 
 	t.Global.Import = []*Import{ // TODO
 		{Alias: "", Path: "fmt"},
+		{Alias: "", Path: "time"},
 		{Alias: ".", Path: "github.com/gosuda/ornn/db"},
 	}
 

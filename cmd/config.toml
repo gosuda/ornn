@@ -8,9 +8,9 @@
   Name = "db_name"
 
 [Gen]
-  SchemaPath = "./schema.hcl"
-  ConfigPath = "./config.json"
-  GenPath = "./output"
+  SchemaPath = "../output/schema.hcl"
+  ConfigPath = "../output/config.json"
+  GenPath = "../output/output_"
   FileName = "gen.go"
   PackageName = "gen"
   ClassName = "Gen"
