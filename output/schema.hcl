@@ -193,7 +193,6 @@ table "projects" {
     columns = [column.id]
   }
 
-  // org 내 slug 유니크
   index "ux_projects_org_slug" {
     unique  = true
     columns = [column.org_id, column.slug]

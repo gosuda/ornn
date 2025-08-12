@@ -5,6 +5,7 @@ import (
 
 	"github.com/gosuda/ornn/config"
 	"github.com/gosuda/ornn/parser"
+	"github.com/rs/zerolog/log"
 )
 
 type Gen struct {
@@ -25,17 +26,16 @@ func (t *Gen) Gen(conf *config.Config, psr parser.Parser) (code string, err erro
 	for tableName, def := range conf.Queries.Class {
 		for _, query := range def {
 			if query.ErrParser != "" {
-				fmt.Printf("parser err - table : %s | query : %s | err : %s\n", tableName, query.Name, query.ErrParser)
+				log.Error().Str("table name", tableName).Str("query name", query.Name).Str("err", query.ErrParser).Msg("parser err")
 				err = fmt.Errorf("query error")
 			}
 			if query.ErrQuery != "" {
-				fmt.Printf("query err - table : %s | query : %s | err : %s\n", tableName, query.Name, query.ErrQuery)
+				log.Error().Str("table name", tableName).Str("query name", query.Name).Str("err", query.ErrParser).Msg("parser err")
 				err = fmt.Errorf("query error")
 			}
 		}
 	}
 
-	// TODO : 쿼리 에러가 있으면 해당 쿼리는 빼고 코드 생성하도록 변경
 	if err != nil {
 		return "", err
 	}

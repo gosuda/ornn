@@ -133,7 +133,6 @@ type Query struct {
 
 	// options
 	CustomFieldTypes []*CustomFieldType `json:"custom_field_types,omitempty"`
-	InsertMulti      bool               `json:"insert_multi,omitempty"`
 	UpdateNullIgnore bool               `json:"update_null_ignore,omitempty"`
 	ErrQuery         string             `json:"-"`
 	ErrParser        string             `json:"-"`
