@@ -65,7 +65,7 @@ func (p *Parser) parseSelect(stmt *sqlparser.Select, parsedQuery *parser.ParsedQ
 				if col, _ := tbl.Column(colName); col != nil {
 					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(col.Name, p.ConvType(col.Type)))
 				} else {
-					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(col.Name, "interface{}"))
+					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(col.Name, "any"))
 				}
 			default:
 				panic("need more programming")
@@ -125,7 +125,7 @@ func (p *Parser) parseInsert(stmt *sqlparser.Insert, parsedQuery *parser.ParsedQ
 				colName := stmt.Columns[i].String()
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, p.ConvType(col.Type)))
 				}
@@ -158,7 +158,7 @@ func (p *Parser) parseUpdate(stmt *sqlparser.Update, parsedQuery *parser.ParsedQ
 				if col, _ := tbl.Column(colName); col != nil {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+col.Name, p.ConvType(col.Type)))
 				} else {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+col.Name, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+col.Name, "any"))
 				}
 			}
 		default:
@@ -221,7 +221,7 @@ func (p *Parser) parseWhere(where *sqlparser.Where, tbl *schema.Table, parsedQue
 				colName := data.Name.String()
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, p.ConvType(col.Type)))
 				}
@@ -233,7 +233,7 @@ func (p *Parser) parseWhere(where *sqlparser.Where, tbl *schema.Table, parsedQue
 				colName := data.Name.String()
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, p.ConvType(col.Type)))
 				}

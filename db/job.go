@@ -16,7 +16,7 @@ type Job struct {
 	tx *sql.Tx
 }
 
-func (t *Job) Exec(query string, args ...interface{}) (res sql.Result, err error) {
+func (t *Job) Exec(query string, args ...any) (res sql.Result, err error) {
 	if t.tx == nil {
 		res, err = t.db.Exec(query, args...)
 	} else {
@@ -25,7 +25,7 @@ func (t *Job) Exec(query string, args ...interface{}) (res sql.Result, err error
 	return res, err
 }
 
-func (t *Job) Query(query string, args ...interface{}) (rows *sql.Rows, err error) {
+func (t *Job) Query(query string, args ...any) (rows *sql.Rows, err error) {
 	if t.tx == nil {
 		rows, err = t.db.Query(query, args...)
 	} else {

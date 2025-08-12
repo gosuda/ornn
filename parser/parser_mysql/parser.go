@@ -75,7 +75,7 @@ func (p *Parser) parseSelect(stmt *ast.SelectStmt, parsedQuery *parser.ParsedQue
 				colName := fieldExpr.Name.Name.O
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, "interface{}"))
+					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, "any"))
 				} else {
 					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, p.ConvType(col.Type)))
 				}
@@ -132,7 +132,7 @@ func (p *Parser) parseInsert(stmt *ast.InsertStmt, parsedQuery *parser.ParsedQue
 				colName := stmt.Columns[i].Name.O
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, p.ConvType(col.Type)))
 				}
@@ -165,7 +165,7 @@ func (p *Parser) parseUpdate(stmt *ast.UpdateStmt, parsedQuery *parser.ParsedQue
 		colName := set.Column.Name.O
 		col, ok := tbl.Column(colName)
 		if ok != true {
-			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+colName, "interface{}"))
+			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+colName, "any"))
 		} else {
 			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("set_"+colName, p.ConvType(col.Type)))
 		}
@@ -225,7 +225,7 @@ func (p *Parser) parseWhere(where ast.ExprNode, tbl *schema.Table, parsedQuery *
 				colName := data.Name.Name.O
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, p.ConvType(col.Type)))
 				}
@@ -238,7 +238,7 @@ func (p *Parser) parseWhere(where ast.ExprNode, tbl *schema.Table, parsedQuery *
 				colName := data.Name.Name.O
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField(colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField(colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField(colName, p.ConvType(col.Type)))
 				}

@@ -92,7 +92,7 @@ func (p *Parser) ConvType(dbType string) (genType string) {
 			genType = "uuidbType.NullUUID"
 		}
 	default:
-		genType = "interface{}"
+		genType = "any"
 	}
 	return genType
 }

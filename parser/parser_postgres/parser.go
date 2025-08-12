@@ -82,7 +82,7 @@ func (p *Parser) parseSelect(stmt *tree.Select, parsedQuery *parser.ParsedQuery)
 					colName := fieldExpr.ColumnName.String()
 					col, ok := tbl.Column(colName)
 					if ok != true {
-						parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, "interface{}"))
+						parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, "any"))
 					} else {
 						parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(colName, p.ConvType(col.Type.Raw)))
 					}
@@ -140,7 +140,7 @@ func (p *Parser) parseInsert(stmt *tree.Insert, parsedQuery *parser.ParsedQuery)
 				colName := stmt.Columns[i].String()
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, p.ConvType(col.Type.Raw)))
 				}
@@ -165,7 +165,7 @@ func (p *Parser) parseUpdate(stmt *tree.Update, parsedQuery *parser.ParsedQuery)
 		colName := setExpr.Names[0].String()
 		col, ok := tbl.Column(colName)
 		if ok != true {
-			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "interface{}"))
+			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, "any"))
 		} else {
 			parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colName, p.ConvType(col.Type.Raw)))
 		}
@@ -227,7 +227,7 @@ func (p *Parser) parseWhere(where *tree.Where, tbl *schema.Table, parsedQuery *p
 				colName := data.Parts[0]
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, p.ConvType(col.Type.Raw)))
 				}
@@ -239,7 +239,7 @@ func (p *Parser) parseWhere(where *tree.Where, tbl *schema.Table, parsedQuery *p
 				colName := data.Parts[0]
 				col, ok := tbl.Column(colName)
 				if ok != true {
-					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "interface{}"))
+					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, "any"))
 				} else {
 					parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("where_"+colName, p.ConvType(col.Type.Raw)))
 				}

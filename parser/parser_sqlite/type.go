@@ -45,7 +45,7 @@ func (t *Parser) ConvType(colType *schema.ColumnType) (genType string) {
 			genType = "sql.NullString"
 		}
 	default:
-		genType = "interface{}"
+		genType = "any"
 	}
 	return genType
 }

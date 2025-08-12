@@ -100,7 +100,7 @@ func (p *Parser) ConvType(colType *schema.ColumnType) (genType string) {
 			genType = "*" + genType
 		}
 	default:
-		genType = "interface{}"
+		genType = "any"
 	}
 	if regexp.MustCompile(`(?i)^set\([^)]*\)$`).MatchString(parseType.Type) {
 		genType = "[]byte"

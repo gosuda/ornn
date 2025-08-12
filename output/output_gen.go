@@ -38,41 +38,10 @@ type Org_members struct {
 	job *Job
 }
 
-func (t *Org_members) Insert(
-	val_org_id uint64,
-	val_user_id uint64,
-	val_role interface{},
-	val_created_at time.Time,
-) (
-	lastInsertId int64,
-	err error,
-) {
-	args := []any{
-		val_org_id,
-		val_user_id,
-		val_role,
-		val_created_at,
-	}
-
-	sql := fmt.Sprintf(
-		"INSERT INTO org_members VALUES (?, ?, ?, ?)",
-	)
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.LastInsertId()
-}
-
 type Org_members_select struct {
 	Org_id     uint64
 	User_id    uint64
-	Role       interface{}
+	Role       any
 	Created_at time.Time
 }
 
@@ -131,7 +100,7 @@ func (t *Org_members) Delete() (
 func (t *Org_members) Update(
 	set_org_id uint64,
 	set_user_id uint64,
-	set_role interface{},
+	set_role any,
 	set_created_at time.Time,
 ) (
 	rowAffected int64,
@@ -158,6 +127,37 @@ func (t *Org_members) Update(
 	return exec.RowsAffected()
 }
 
+func (t *Org_members) Insert(
+	val_org_id uint64,
+	val_user_id uint64,
+	val_role any,
+	val_created_at time.Time,
+) (
+	lastInsertId int64,
+	err error,
+) {
+	args := []any{
+		val_org_id,
+		val_user_id,
+		val_role,
+		val_created_at,
+	}
+
+	sql := fmt.Sprintf(
+		"INSERT INTO org_members VALUES (?, ?, ?, ?)",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.LastInsertId()
+}
+
 func (t *Organizations) Init(
 	job *Job,
 ) {
@@ -166,63 +166,6 @@ func (t *Organizations) Init(
 
 type Organizations struct {
 	job *Job
-}
-
-func (t *Organizations) Delete(
-	where_id uint64,
-) (
-	rowAffected int64,
-	err error,
-) {
-	args := []any{
-		where_id,
-	}
-
-	sql := fmt.Sprintf(
-		"DELETE FROM organizations WHERE id = ?",
-	)
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.RowsAffected()
-}
-
-func (t *Organizations) Update(
-	set_id uint64,
-	set_name string,
-	set_owner_id uint64,
-	set_created_at time.Time,
-	where_id uint64,
-) (
-	rowAffected int64,
-	err error,
-) {
-	sql := fmt.Sprintf(
-		"UPDATE organizations SET id = ?, name = ?, owner_id = ?, created_at = ? WHERE id = ?",
-	)
-	args := []any{
-		set_id,
-		set_name,
-		set_owner_id,
-		set_created_at,
-		where_id,
-	}
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.RowsAffected()
 }
 
 func (t *Organizations) Insert(
@@ -298,6 +241,63 @@ func (t *Organizations) Select(
 	return selects, nil
 }
 
+func (t *Organizations) Delete(
+	where_id uint64,
+) (
+	rowAffected int64,
+	err error,
+) {
+	args := []any{
+		where_id,
+	}
+
+	sql := fmt.Sprintf(
+		"DELETE FROM organizations WHERE id = ?",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.RowsAffected()
+}
+
+func (t *Organizations) Update(
+	set_id uint64,
+	set_name string,
+	set_owner_id uint64,
+	set_created_at time.Time,
+	where_id uint64,
+) (
+	rowAffected int64,
+	err error,
+) {
+	sql := fmt.Sprintf(
+		"UPDATE organizations SET id = ?, name = ?, owner_id = ?, created_at = ? WHERE id = ?",
+	)
+	args := []any{
+		set_id,
+		set_name,
+		set_owner_id,
+		set_created_at,
+		where_id,
+	}
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.RowsAffected()
+}
+
 func (t *Projects) Init(
 	job *Job,
 ) {
@@ -313,7 +313,7 @@ func (t *Projects) Insert(
 	val_org_id uint64,
 	val_name string,
 	val_slug string,
-	val_status interface{},
+	val_status any,
 	val_created_at time.Time,
 	val_updated_at time.Time,
 ) (
@@ -350,7 +350,7 @@ type Projects_select struct {
 	Org_id     uint64
 	Name       string
 	Slug       string
-	Status     interface{}
+	Status     any
 	Created_at time.Time
 	Updated_at time.Time
 }
@@ -420,7 +420,7 @@ func (t *Projects) Update(
 	set_org_id uint64,
 	set_name string,
 	set_slug string,
-	set_status interface{},
+	set_status any,
 	set_created_at time.Time,
 	set_updated_at time.Time,
 	where_id uint64,
@@ -463,83 +463,14 @@ type Tasks struct {
 	job *Job
 }
 
-func (t *Tasks) Delete(
-	where_id uint64,
-) (
-	rowAffected int64,
-	err error,
-) {
-	args := []any{
-		where_id,
-	}
-
-	sql := fmt.Sprintf(
-		"DELETE FROM tasks WHERE id = ?",
-	)
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.RowsAffected()
-}
-
-func (t *Tasks) Update(
-	set_id uint64,
-	set_project_id uint64,
-	set_assignee_id uint64,
-	set_title string,
-	set_description string,
-	set_priority interface{},
-	set_status interface{},
-	set_due_date time.Time,
-	set_created_at time.Time,
-	set_updated_at time.Time,
-	where_id uint64,
-) (
-	rowAffected int64,
-	err error,
-) {
-	sql := fmt.Sprintf(
-		"UPDATE tasks SET id = ?, project_id = ?, assignee_id = ?, title = ?, description = ?, priority = ?, status = ?, due_date = ?, created_at = ?, updated_at = ? WHERE id = ?",
-	)
-	args := []any{
-		set_id,
-		set_project_id,
-		set_assignee_id,
-		set_title,
-		set_description,
-		set_priority,
-		set_status,
-		set_due_date,
-		set_created_at,
-		set_updated_at,
-		where_id,
-	}
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.RowsAffected()
-}
-
 func (t *Tasks) Insert(
 	val_id uint64,
 	val_project_id uint64,
 	val_assignee_id uint64,
 	val_title string,
 	val_description string,
-	val_priority interface{},
-	val_status interface{},
+	val_priority any,
+	val_status any,
 	val_due_date time.Time,
 	val_created_at time.Time,
 	val_updated_at time.Time,
@@ -581,8 +512,8 @@ type Tasks_select struct {
 	Assignee_id uint64
 	Title       string
 	Description string
-	Priority    interface{}
-	Status      interface{}
+	Priority    any
+	Status      any
 	Due_date    time.Time
 	Created_at  time.Time
 	Updated_at  time.Time
@@ -623,6 +554,75 @@ func (t *Tasks) Select(
 	return selects, nil
 }
 
+func (t *Tasks) Delete(
+	where_id uint64,
+) (
+	rowAffected int64,
+	err error,
+) {
+	args := []any{
+		where_id,
+	}
+
+	sql := fmt.Sprintf(
+		"DELETE FROM tasks WHERE id = ?",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.RowsAffected()
+}
+
+func (t *Tasks) Update(
+	set_id uint64,
+	set_project_id uint64,
+	set_assignee_id uint64,
+	set_title string,
+	set_description string,
+	set_priority any,
+	set_status any,
+	set_due_date time.Time,
+	set_created_at time.Time,
+	set_updated_at time.Time,
+	where_id uint64,
+) (
+	rowAffected int64,
+	err error,
+) {
+	sql := fmt.Sprintf(
+		"UPDATE tasks SET id = ?, project_id = ?, assignee_id = ?, title = ?, description = ?, priority = ?, status = ?, due_date = ?, created_at = ?, updated_at = ? WHERE id = ?",
+	)
+	args := []any{
+		set_id,
+		set_project_id,
+		set_assignee_id,
+		set_title,
+		set_description,
+		set_priority,
+		set_status,
+		set_due_date,
+		set_created_at,
+		set_updated_at,
+		where_id,
+	}
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.RowsAffected()
+}
+
 func (t *Users) Init(
 	job *Job,
 ) {
@@ -633,11 +633,46 @@ type Users struct {
 	job *Job
 }
 
+func (t *Users) Insert(
+	val_id uint64,
+	val_email string,
+	val_username string,
+	val_status any,
+	val_created_at time.Time,
+	val_updated_at time.Time,
+) (
+	lastInsertId int64,
+	err error,
+) {
+	args := []any{
+		val_id,
+		val_email,
+		val_username,
+		val_status,
+		val_created_at,
+		val_updated_at,
+	}
+
+	sql := fmt.Sprintf(
+		"INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.LastInsertId()
+}
+
 type Users_select struct {
 	Id         uint64
 	Email      string
 	Username   string
-	Status     interface{}
+	Status     any
 	Created_at time.Time
 	Updated_at time.Time
 }
@@ -706,7 +741,7 @@ func (t *Users) Update(
 	set_id uint64,
 	set_email string,
 	set_username string,
-	set_status interface{},
+	set_status any,
 	set_created_at time.Time,
 	set_updated_at time.Time,
 	where_id uint64,
@@ -736,39 +771,4 @@ func (t *Users) Update(
 	}
 
 	return exec.RowsAffected()
-}
-
-func (t *Users) Insert(
-	val_id uint64,
-	val_email string,
-	val_username string,
-	val_status interface{},
-	val_created_at time.Time,
-	val_updated_at time.Time,
-) (
-	lastInsertId int64,
-	err error,
-) {
-	args := []any{
-		val_id,
-		val_email,
-		val_username,
-		val_status,
-		val_created_at,
-		val_updated_at,
-	}
-
-	sql := fmt.Sprintf(
-		"INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)",
-	)
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.LastInsertId()
 }

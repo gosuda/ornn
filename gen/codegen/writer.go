@@ -22,7 +22,7 @@ func (t *Writer) String() string {
 	return t.buf.String()
 }
 
-func (t *Writer) N(format string, i ...interface{}) (err error) {
+func (t *Writer) N(format string, i ...any) (err error) {
 	new := fmt.Sprintf(format, i...)
 	_, err = t.writer.Write([]byte(new))
 	if err != nil {
@@ -35,7 +35,7 @@ func (t *Writer) Indent() string {
 	return strings.Repeat("\t", t.indent)
 }
 
-func (t *Writer) W(format string, i ...interface{}) (err error) {
+func (t *Writer) W(format string, i ...any) (err error) {
 	t.writer.Write([]byte(t.Indent()))
 
 	new := fmt.Sprintf(format, i...)
