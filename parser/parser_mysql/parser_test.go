@@ -1,101 +1,220 @@
 package parser_mysql
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/gosuda/ornn/atlas"
-	"github.com/gosuda/ornn/config"
-	"github.com/gosuda/ornn/db/db_mysql"
-	tiparser "github.com/pingcap/tidb/parser"
-	"github.com/pingcap/tidb/parser/ast"
+	"ariga.io/atlas/sql/schema"
+	"github.com/gosuda/ornn/parser"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gosuda/ornn/config"
 )
 
-func TestParseMysqlSelect(t *testing.T) {
-	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
-	require.NoError(t, err)
+func newTestSchema(t *testing.T) *config.Schema {
+	t.Helper()
 
-	atlas := atlas.New(atlas.DbTypeMaria, db)
-	sc, err := atlas.InspectSchema()
-	require.NoError(t, err)
-	sch := config.Schema{
-		DbType: atlas.DbType,
-		Schema: sc,
+	users := &schema.Table{Name: "users"}
+	users.Columns = []*schema.Column{
+		{Name: "id", Type: &schema.ColumnType{Type: &schema.IntegerType{T: "int"}}},
+		{Name: "name", Type: &schema.ColumnType{Type: &schema.StringType{T: "varchar"}}},
+		{Name: "age", Type: &schema.ColumnType{Type: &schema.IntegerType{T: "int"}}},
+	}
+	orders := &schema.Table{Name: "orders"}
+	orders.Columns = []*schema.Column{
+		{Name: "id", Type: &schema.ColumnType{Type: &schema.IntegerType{T: "int"}}},
+		{Name: "user_id", Type: &schema.ColumnType{Type: &schema.IntegerType{T: "int"}}},
+		{Name: "amount", Type: &schema.ColumnType{Type: &schema.DecimalType{T: "decimal"}}},
 	}
 
-	myps := New(&sch).(*Parser)
+	s := &config.Schema{}
+	s.Schema = &schema.Schema{}
+	s.AddTables(users, orders)
+	return s
+}
 
-	// parse
-	// stmtNodes, _, err := tiparser.New().Parse("select seq, id from user where id = ? and seq = b limit 123 offset 456;", "", "")
-	// stmtNodes, _, err := tiparser.New().Parse("SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate FROM Orders INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;", "", "")
+func retNames(pq *parser.ParsedQuery) []string {
+	out := make([]string, len(pq.Ret))
+	for i, f := range pq.Ret {
+		out[i] = f.Name
+	}
+	return out
+}
 
-	stmtNodes, _, err := tiparser.New().Parse("select * from user where id = ? and pw = abc", "", "")
+func argNames(pq *parser.ParsedQuery) []string {
+	out := make([]string, len(pq.Arg))
+	for i, f := range pq.Arg {
+		out[i] = f.Name
+	}
+	return out
+}
+
+func mustParse(t *testing.T, p parser.Parser, sql string) *parser.ParsedQuery {
+	t.Helper()
+	pq, err := p.Parse(sql)
 	require.NoError(t, err)
-	for _, stmtNode := range stmtNodes {
-		selectStmt := stmtNode.(*ast.SelectStmt)
-		// from
-		tables := ParseJoinToTables(selectStmt.From.TableRefs)
-		for _, tableExpr := range tables {
-			tblName := ParseTableName(tableExpr)
-			fmt.Println(tblName)
-		}
+	return pq
+}
 
-		tableName := selectStmt.From.TableRefs.Left.(*ast.TableSource).Source.(*ast.TableName).Name.O
-		table, _ := sch.Table(tableName)
-		fmt.Println("table name :", tableName, table.Name)
+func newParser(t *testing.T) parser.Parser {
+	return New(newTestSchema(t))
+}
 
-		// select
-		// select * 일 경우 schema 의 모든 필드 추출
-		if selectStmt.Fields.Fields[0].WildCard != nil {
-			tbl, ok := sch.Table(tableName)
-			if ok == true {
-				for _, col := range tbl.Columns {
-					fmt.Printf("name : %s | db type : %s | golang Type : %s\n", col.Name, col.Type.Raw, myps.ConvType(col.Type))
-				}
-			}
-		} else {
-			// select * 외의 경우
-		}
+// -----------------------------------------------------------------------------
+// Tests
+// -----------------------------------------------------------------------------
 
-		// visit 하면서 재귀적으로 where 필드 추출
-		fields := ParseWhereToFields(selectStmt.Where)
-		for k, v := range fields {
-			fmt.Printf("key : (%T) %v\n", k, k)
-			fmt.Printf("value : (%T) %v\n", v, v)
-		}
+func TestSelectStar(t *testing.T) {
+	p := newParser(t)
+	pq := mustParse(t, p, `SELECT * FROM users WHERE id = ?`)
+
+	require.Equal(t, parser.QueryTypeSelect, pq.QueryType)
+
+	gotRet := retNames(pq)
+	wantAny := []string{"id", "name", "age"}
+	for _, w := range wantAny {
+		require.Containsf(t, gotRet, w, "SELECT * missing column %q, got %v", w, gotRet)
+	}
+
+	gotArg := argNames(pq)
+	require.Equal(t, []string{"where_id"}, gotArg)
+}
+
+func TestSelectColumnsAndWhereVariants(t *testing.T) {
+	p := newParser(t)
+	sql := `
+SELECT u.id, u.name
+FROM users AS u
+WHERE (u.id = ? OR ? = u.age)
+  AND u.age BETWEEN ? AND ?
+  AND u.name LIKE ?
+  AND u.id IN (?, 2, 3, ?, func())
+`
+	pq := mustParse(t, p, sql)
+
+	gotRet := retNames(pq)
+	require.Len(t, gotRet, 2)
+	require.NotEmpty(t, gotRet[0])
+	require.NotEmpty(t, gotRet[1])
+
+	gotArg := argNames(pq)
+	expect := []string{
+		"where_u.id",
+		"where_u.age",
+		"where_u.age_from",
+		"where_u.age_to",
+		"where_u.name_like",
+		"where_u.id_in_0",
+		"where_u.id_in_3",
+	}
+	for _, want := range expect {
+		require.Containsf(t, gotArg, want, "missing arg %q; got %v", want, gotArg)
 	}
 }
 
-func TestParseMysqlInsert(t *testing.T) {
-	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
-	require.NoError(t, err)
-	atlas := atlas.New(atlas.DbTypeMaria, db)
-	sc, err := atlas.InspectSchema()
-	require.NoError(t, err)
+func TestInsertValuesSingleRow(t *testing.T) {
+	p := newParser(t)
+	sql := `INSERT INTO users(id, name, age) VALUES (?, 'alice', ?)`
+	pq := mustParse(t, p, sql)
 
-	myps := New(&config.Schema{
-		DbType: atlas.DbType,
-		Schema: sc,
-	})
-
-	parsedQuery, err := myps.Parse("insert into user VALUES(1, ?, ?, ?);")
-	require.NoError(t, err)
-	fmt.Println(parsedQuery)
+	require.Equal(t, parser.QueryTypeInsert, pq.QueryType)
+	got := argNames(pq)
+	expect := []string{"val_id", "val_age"}
+	require.Equal(t, expect, got)
 }
 
-func TestParseMysqlUpdate(t *testing.T) {
-	db, err := db_mysql.New(db_mysql.Dsn("127.0.0.1", "3306", "root", "1234", "db_name"), "db_name")
-	require.NoError(t, err)
-	atlas := atlas.New(atlas.DbTypeMaria, db)
-	sc, err := atlas.InspectSchema()
-	require.NoError(t, err)
+func TestInsertValuesBulkRows(t *testing.T) {
+	p := newParser(t)
+	sql := `
+INSERT INTO users(id, name, age)
+VALUES (?, ?, ?),
+       (2, 'bob', ?),
+       (?, 'carol', 30)
+`
+	pq := mustParse(t, p, sql)
 
-	myps := New(&config.Schema{
-		DbType: atlas.DbType,
-		Schema: sc,
-	})
-	parsedQuery, err := myps.Parse("update user set seq = ?, id = ? where id = ?;")
-	require.NoError(t, err)
-	_ = parsedQuery
+	got := argNames(pq)
+	expect := []string{
+		"val_id", "val_name", "val_age", // row1
+		"val_age_2", // row2
+		"val_id_2",  // row3
+	}
+
+	require.Equal(t, expect, got, "bulk insert arg names mismatch")
+}
+
+func TestInsertSelect(t *testing.T) {
+	p := newParser(t)
+	sql := `
+INSERT INTO orders(id, user_id, amount)
+SELECT u.id, u.id, 100
+FROM users u
+WHERE u.age >= ?
+`
+	pq := mustParse(t, p, sql)
+
+	require.Equal(t, parser.QueryTypeInsert, pq.QueryType)
+	got := argNames(pq)
+	require.Equal(t, []string{"where_u.age"}, got)
+}
+
+func TestInsertOnDuplicate(t *testing.T) {
+	p := newParser(t)
+	sql := `
+INSERT INTO users(id, name, age) VALUES (?, ?, ?)
+ON DUPLICATE KEY UPDATE
+  name = ?,
+  age  = age + 1
+`
+	pq := mustParse(t, p, sql)
+
+	got := argNames(pq)
+	expect := []string{"val_id", "val_name", "val_age", "dup_name"}
+	require.Equal(t, expect, got)
+}
+
+func TestUpdateSetWithParams(t *testing.T) {
+	p := newParser(t)
+	sql := `UPDATE users SET name = ?, age = age + 1 WHERE id = ?`
+	pq := mustParse(t, p, sql)
+
+	require.Equal(t, parser.QueryTypeUpdate, pq.QueryType)
+	got := argNames(pq)
+	expect := []string{"set_name", "where_id"}
+	require.Equal(t, expect, got)
+}
+
+func TestDeleteWhere(t *testing.T) {
+	p := newParser(t)
+	sql := `DELETE FROM users WHERE name LIKE ? AND age BETWEEN ? AND ?`
+	pq := mustParse(t, p, sql)
+
+	require.Equal(t, parser.QueryTypeDelete, pq.QueryType)
+	got := argNames(pq)
+	expectSet := map[string]bool{
+		"where_name_like": true,
+		"where_age_from":  true,
+		"where_age_to":    true,
+	}
+	for _, a := range got {
+		delete(expectSet, a)
+	}
+	require.Emptyf(t, expectSet, "missing args: %v; got %v", expectSet, got)
+}
+
+func TestJoinAliasResolution(t *testing.T) {
+	p := newParser(t)
+	sql := `
+SELECT u.id, o.amount
+FROM users AS u
+JOIN orders AS o ON o.user_id = u.id
+WHERE u.id = ? AND o.amount > ?
+`
+	pq := mustParse(t, p, sql)
+
+	ret := retNames(pq)
+	require.Len(t, ret, 2)
+
+	args := argNames(pq)
+	require.Contains(t, args, "where_u.id")
+	require.Contains(t, args, "where_o.amount")
 }
