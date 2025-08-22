@@ -35,11 +35,11 @@ func main() {
 ```
 
 ## Build
-
-    go get github.com/gosuda/ornn
-    cd $GOPATH/src/github.com/gosuda/ornn
-    go build .
-
+```
+go get github.com/gosuda/ornn
+cd $GOPATH/src/github.com/gosuda/ornn/cmd
+go build -o ornn .
+```
 
 ## Run
 

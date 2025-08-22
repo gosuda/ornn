@@ -308,6 +308,43 @@ type Projects struct {
 	job *Job
 }
 
+func (t *Projects) Insert(
+	val_id uint64,
+	val_org_id uint64,
+	val_name string,
+	val_slug string,
+	val_status any,
+	val_created_at time.Time,
+	val_updated_at time.Time,
+) (
+	lastInsertId int64,
+	err error,
+) {
+	args := []any{
+		val_id,
+		val_org_id,
+		val_name,
+		val_slug,
+		val_status,
+		val_created_at,
+		val_updated_at,
+	}
+
+	sql := fmt.Sprintf(
+		"INSERT INTO projects VALUES (?, ?, ?, ?, ?, ?, ?)",
+	)
+
+	exec, err := t.job.Exec(
+		sql,
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return exec.LastInsertId()
+}
+
 type Projects_select struct {
 	Id         uint64
 	Org_id     uint64
@@ -416,12 +453,25 @@ func (t *Projects) Update(
 	return exec.RowsAffected()
 }
 
-func (t *Projects) Insert(
+func (t *Tasks) Init(
+	job *Job,
+) {
+	t.job = job
+}
+
+type Tasks struct {
+	job *Job
+}
+
+func (t *Tasks) Insert(
 	val_id uint64,
-	val_org_id uint64,
-	val_name string,
-	val_slug string,
+	val_project_id uint64,
+	val_assignee_id uint64,
+	val_title string,
+	val_description string,
+	val_priority any,
 	val_status any,
+	val_due_date time.Time,
 	val_created_at time.Time,
 	val_updated_at time.Time,
 ) (
@@ -430,16 +480,19 @@ func (t *Projects) Insert(
 ) {
 	args := []any{
 		val_id,
-		val_org_id,
-		val_name,
-		val_slug,
+		val_project_id,
+		val_assignee_id,
+		val_title,
+		val_description,
+		val_priority,
 		val_status,
+		val_due_date,
 		val_created_at,
 		val_updated_at,
 	}
 
 	sql := fmt.Sprintf(
-		"INSERT INTO projects VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 	)
 
 	exec, err := t.job.Exec(
@@ -451,16 +504,6 @@ func (t *Projects) Insert(
 	}
 
 	return exec.LastInsertId()
-}
-
-func (t *Tasks) Init(
-	job *Job,
-) {
-	t.job = job
-}
-
-type Tasks struct {
-	job *Job
 }
 
 type Tasks_select struct {
@@ -578,49 +621,6 @@ func (t *Tasks) Update(
 	}
 
 	return exec.RowsAffected()
-}
-
-func (t *Tasks) Insert(
-	val_id uint64,
-	val_project_id uint64,
-	val_assignee_id uint64,
-	val_title string,
-	val_description string,
-	val_priority any,
-	val_status any,
-	val_due_date time.Time,
-	val_created_at time.Time,
-	val_updated_at time.Time,
-) (
-	lastInsertId int64,
-	err error,
-) {
-	args := []any{
-		val_id,
-		val_project_id,
-		val_assignee_id,
-		val_title,
-		val_description,
-		val_priority,
-		val_status,
-		val_due_date,
-		val_created_at,
-		val_updated_at,
-	}
-
-	sql := fmt.Sprintf(
-		"INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-	)
-
-	exec, err := t.job.Exec(
-		sql,
-		args...,
-	)
-	if err != nil {
-		return 0, err
-	}
-
-	return exec.LastInsertId()
 }
 
 func (t *Users) Init(

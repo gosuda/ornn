@@ -22,6 +22,10 @@ func (t *Writer) String() string {
 	return t.buf.String()
 }
 
+func (t *Writer) Bytes() []byte {
+	return t.buf.Bytes()
+}
+
 func (t *Writer) N(format string, i ...any) (err error) {
 	new := fmt.Sprintf(format, i...)
 	_, err = t.writer.Write([]byte(new))
