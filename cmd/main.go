@@ -55,8 +55,8 @@ var (
 func init() {
 	fs := rootCmd.PersistentFlags()
 	fs.StringVarP(&configFilePath, "config", "c", "config.toml", "Path to config file")
-	fs.BoolVar(&loadExistSchemaFile, "file_schema_load", true, "load schema from existing file and migrate database")
-	fs.BoolVar(&loadExistConfigFile, "file_config_load", false, "load config from existing file")
+	fs.BoolVar(&loadExistSchemaFile, "load_schema", true, "load schema from existing file and migrate database")
+	fs.BoolVar(&loadExistConfigFile, "load_config", false, "load config from existing file")
 }
 
 func main() {

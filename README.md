@@ -43,29 +43,28 @@ func main() {
 
 ## Run
 
-```
-Usage:
-  ornn [flags]
+### 1. Create Config file (config.toml)
 
-Flags:
-  -A, --db_addr string            database server address (default "127.0.0.1")
-  -i, --db_id string              database server id
-  -n, --db_name string            database name
-      --db_path string            path for save db files. sqlite only (default "./output/sqlite-database.db")
-  -P, --db_port string            database server port (default "3306")
-  -p, --db_pw string              database server password
-  -D, --db_type string            database type ( mysql, mariadb, postgres, sqlite, tidb, cockroachdb ) (default "mysql")
-      --file_config_load bool     load config from existing file ( default false )
-      --file_config_path string   config json file path (default "./output/config.json")
-      --file_gen_path string      generate golang file path (default "./output/gen.go")
-      --file_schema_load bool     load schema from existing file and migrate database ( default false )
-      --file_schema_path string   schema hcl file path (default "./output/schema.hcl")
-      --gen_class_name string     class name (default "Gen")
-      --gen_do_not_edit string    do not edit comment (default "// Code generated - DO NOT EDIT.\n// This file is a generated and any changes will be lost.\n")
-      --gen_package_name string   package name (default "gen")
-  -h, --help                      help for ornn
+```
+[DB]
+  Type     = "mysql"
+  Addr     = "localhost"
+  Port     = "3306"
+  User     = "user"
+  Password = "1234"
+  Name     = "db_name"
+  Path     = "./"  # for sqlite only
+
+[Gen]
+  SchemaPath   = "../output/schema.hcl"
+  ConfigPath   = "../output/config.json"
+  GenPath      = "../output/output_"
+  FileName     = "gen.go"
+  PackageName  = "gen"
+  ClassName    = "Gen"
 ```
 
-Example
-
-    ./ornn -D mysql -A 127.0.0.1 -P 3306 -i root -p 1234 -n db_name
+### 2. Run ornn with config
+```
+./ornn --load_schema=true --load_config=false
+```
