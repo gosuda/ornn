@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"ariga.io/atlas/sql/schema"
 	"github.com/CovenantSQL/sqlparser"
+	"github.com/gosuda/ornn/config"
+	"github.com/gosuda/ornn/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,4 +49,31 @@ func TestParseSqliteInsert(t *testing.T) {
 	fmt.Println(insertStmt.Table.Name.String())
 	fmt.Println(insertStmt.OnDup)
 
+}
+
+func newSQLiteTestParser(t *testing.T) parser.Parser {
+	t.Helper()
+
+	sch := schema.New("")
+	sch.AddTables(&schema.Table{
+		Name: "users",
+		Columns: []*schema.Column{
+			{Name: "id", Type: &schema.ColumnType{Type: &schema.IntegerType{T: "int"}}},
+		},
+	})
+	return New(&config.Schema{Schema: sch})
+}
+
+func TestInsertSourceClassification(t *testing.T) {
+	p := newSQLiteTestParser(t)
+
+	t.Run("select source is unsupported", func(t *testing.T) {
+		_, err := p.Parse("INSERT INTO users(id) SELECT id FROM users")
+		require.ErrorContains(t, err, "unsupported INSERT source")
+	})
+
+	t.Run("multiple values rows are bulk", func(t *testing.T) {
+		_, err := p.Parse("INSERT INTO users(id) VALUES (?), (?)")
+		require.ErrorContains(t, err, "bulk query")
+	})
 }

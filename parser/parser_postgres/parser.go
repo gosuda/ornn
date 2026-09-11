@@ -21,15 +21,25 @@ type Parser struct {
 	sch *config.Schema
 }
 
-func (p *Parser) Parse(sql string) (*parser.ParsedQuery, error) {
-	stmtNodes, err := sqlparser.Parse(sql)
+func parseSQL(sql string) (stmtNodes sqlparser.Statements, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("parser backend panic: %v", r)
+		}
+	}()
+
+	return sqlparser.Parse(sql)
+}
+
+func (p *Parser) Parse(sql string) (parsedQuery *parser.ParsedQuery, err error) {
+	stmtNodes, err := parseSQL(sql)
 	if err != nil {
 		return nil, err
 	} else if len(stmtNodes) != 1 {
-		panic("need more programming")
+		return nil, fmt.Errorf("parser error | only one statement is supported")
 	}
 
-	parsedQuery := &parser.ParsedQuery{}
+	parsedQuery = &parser.ParsedQuery{}
 	parsedQuery.Init(sql)
 	switch stmt := stmtNodes[0].AST.(type) {
 	case *tree.Select:
@@ -55,11 +65,11 @@ func (p *Parser) parseSelect(stmt *tree.Select, parsedQuery *parser.ParsedQuery)
 
 	selectStmt, ok := stmt.Select.(*tree.SelectClause)
 	if !ok {
-		panic("need more programming")
+		return fmt.Errorf("parser error | unsupported select clause type %T", stmt.Select)
 	}
 	// from
 	if len(selectStmt.From.Tables) != 1 {
-		panic("need more programming")
+		return fmt.Errorf("parser error | only single table select is supported")
 	}
 	tbl, err := p.parseFrom(selectStmt.From.Tables[0])
 	if err != nil {
@@ -110,7 +120,11 @@ func (p *Parser) parseInsert(stmt *tree.Insert, parsedQuery *parser.ParsedQuery)
 	}
 
 	// values
-	rows := stmt.Rows.Select.(*tree.ValuesClause).Rows
+	valuesClause, ok := stmt.Rows.Select.(*tree.ValuesClause)
+	if !ok {
+		return fmt.Errorf("parser error | INSERT supports VALUES clause only")
+	}
+	rows := valuesClause.Rows
 	if len(rows) != 1 {
 		return errors.New("bulk query is invalid, use bulk options")
 	}
@@ -120,22 +134,22 @@ func (p *Parser) parseInsert(stmt *tree.Insert, parsedQuery *parser.ParsedQuery)
 			colNames[i] = col.Name
 		}
 		if len(tbl.Columns) != len(rows[0]) {
-			panic("not same column and value count")
+			return fmt.Errorf("parser error | column count and values count mismatch")
 		}
 		for i, list := range rows[0] {
 			if _, _, placeHolder, ok := ParseDriverValue(list); !ok {
-				panic("need more programming")
+				return fmt.Errorf("parser error | unsupported insert value type")
 			} else if placeHolder != nil {
 				parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colNames[i], p.ConvType(tbl.Columns[i].Type.Raw)))
 			}
 		}
 	} else { // insert specific fields
 		if len(stmt.Columns) != len(rows[0]) {
-			panic("not same column and value count")
+			return fmt.Errorf("parser error | column count and values count mismatch")
 		}
 		for i, list := range rows[0] {
 			if _, _, paramMarkerExpr, ok := ParseDriverValue(list); !ok {
-				panic("need more programming")
+				return fmt.Errorf("parser error | unsupported insert value type")
 			} else if paramMarkerExpr != nil {
 				colName := stmt.Columns[i].String()
 				col, ok := tbl.Column(colName)
@@ -160,7 +174,7 @@ func (p *Parser) parseUpdate(stmt *tree.Update, parsedQuery *parser.ParsedQuery)
 	// set
 	for _, setExpr := range stmt.Exprs {
 		if len(setExpr.Names) != 1 {
-			panic("need more programming")
+			return fmt.Errorf("parser error | multiple columns in one set clause are not supported")
 		}
 		colName := setExpr.Names[0].String()
 		col, ok := tbl.Column(colName)
@@ -207,9 +221,13 @@ func (p *Parser) parseFrom(tableClause tree.TableExpr) (tbl *schema.Table, err e
 	case *tree.TableName:
 		tableName = data.Table()
 	case *tree.AliasedTableExpr:
-		tableName = data.Expr.(*tree.TableName).Table()
+		tableNameExpr, ok := data.Expr.(*tree.TableName)
+		if !ok {
+			return nil, fmt.Errorf("parser error | unsupported aliased table expression %T", data.Expr)
+		}
+		tableName = tableNameExpr.Table()
 	default:
-		panic("need more programming")
+		return nil, fmt.Errorf("parser error | unsupported table clause %T", tableClause)
 	}
 	tbl, ok := p.sch.Table(tableName)
 	if ok != true {
@@ -219,7 +237,13 @@ func (p *Parser) parseFrom(tableClause tree.TableExpr) (tbl *schema.Table, err e
 }
 
 func (p *Parser) parseWhere(where *tree.Where, tbl *schema.Table, parsedQuery *parser.ParsedQuery) (err error) {
-	whereFields := ParseWhereToFields(where.Expr)
+	if where == nil || where.Expr == nil {
+		return nil
+	}
+	whereFields, err := parseWhereToFields(where.Expr)
+	if err != nil {
+		return err
+	}
 	for _, where := range whereFields {
 		// left 의 column 을 인자로 추출
 		if placeHolder, _ := where.right.(*tree.Placeholder); placeHolder != nil {

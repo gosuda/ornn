@@ -1,21 +1,17 @@
-// Example usage:
+// Command ornn generates database access code from a schema and query config.
 //
-//	package main
+// Build:
 //
-//	import (
-//		"os"
+//	go build -o ornn ./cmd
 //
-//	    ornn "https://github.com/gosuda/ornn/cmd/ornn"
-//	)
+// Run:
 //
-//	func main() {
-//		if err := ornn.Run(os.Args[1:]); err != nil {
-//			os.Exit(1)
-//		}
-//	}
+//	./ornn --config ./config.toml
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
 	"ariga.io/atlas/sql/schema"
@@ -36,15 +32,24 @@ import (
 
 func Run(args []string) error {
 	rootCmd.SetArgs(args)
-	return rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		var appErr *AppError
+		if errors.As(err, &appErr) {
+			return err
+		}
+		return NewUserError("cli", err.Error(), "run ornn --help for valid options")
+	}
+	return nil
 }
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "ornn",
-		Short: "ornn is a code generator for golang",
-		Long:  "ornn is a code generator for golang db access",
-		Run:   rootRun,
+		Use:           "ornn",
+		Short:         "ornn is a code generator for golang",
+		Long:          "ornn is a code generator for golang db access",
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		RunE:          rootRun,
 	}
 
 	loadExistSchemaFile bool // 기존 스키마 파일에서 로딩, 스키마 파일대로 db migrate
@@ -61,54 +66,57 @@ func init() {
 
 func main() {
 	if err := Run(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func rootRun(cmd *cobra.Command, args []string) {
+func rootRun(cmd *cobra.Command, args []string) error {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Panic().Err(err).Msg("Failed to load config")
+		if errors.Is(err, os.ErrNotExist) {
+			return NewUserError("config-load", fmt.Sprintf("config file does not exist: %s", configFilePath), "provide a valid path with --config")
+		}
+		return NewSystemError("config-load", err, fmt.Sprintf("check config file path and format: %s", configFilePath))
 	}
-	atlasDbType := atlas.DbTypeStrReverse[cfg.DB.Type]
+	if err := validateConfig(cfg, loadExistSchemaFile, loadExistConfigFile); err != nil {
+		return err
+	}
+	atlasDbType, ok := atlas.DbTypeStrReverse[cfg.DB.Type]
+	if !ok || atlasDbType == atlas.DbTypeEmpty {
+		return NewUserError("config-validate", fmt.Sprintf("unsupported db type: %s", cfg.DB.Type), "use one of: mysql, mariadb, postgres, sqlite, tidb, cockroachdb")
+	}
 
 	// 1. connect db
-	var conn *db.Conn
-	switch atlasDbType {
-	case atlas.DbTypeMySQL, atlas.DbTypeMaria, atlas.DbTypeTiDB:
-		conn, err = db_mysql.New(db_mysql.Dsn(cfg.DB.User, cfg.DB.Password, cfg.DB.Addr, cfg.DB.Port, cfg.DB.Name), cfg.DB.Name)
-	case atlas.DbTypePostgre, atlas.DbTypeCockroachDB:
-		conn, err = db_postgres.New(db_postgres.Dsn(cfg.DB.User, cfg.DB.Password, cfg.DB.Addr, cfg.DB.Port, cfg.DB.Name), cfg.DB.Name)
-	case atlas.DbTypeSQLite:
-		conn, err = db_sqlite.New(cfg.DB.Path)
-	default:
-		log.Panic().Msgf("invalid db type: %s", cfg.DB.Type)
-	}
+	conn, err := connectDB(cfg, atlasDbType)
 	if err != nil {
-		log.Panic().Err(err).Msg("db connect error")
+		return err
 	}
 
 	// 2. init schema from atl
 	var sch *schema.Schema
-	atl := atlas.New(atlasDbType, conn)
+	atl, err := atlas.New(atlasDbType, conn)
+	if err != nil {
+		return NewSystemError("atlas-init", err, "check database driver and connection settings")
+	}
 	if loadExistSchemaFile { // load from existing schema file
 		if sch, err = atl.Load(cfg.Gen.SchemaPath); err != nil {
-			log.Panic().Err(err).Msg("schema load error")
+			return NewSystemError("schema-load", err, "check --load_schema and schema file path")
 		}
 		// migrate db from file
 		if err = atl.MigrateSchema(sch); err != nil {
-			log.Panic().Err(err).Msg("atlas migrate error")
+			return NewSystemError("schema-migrate", err, "check schema compatibility with target database")
 		}
 		// inspect schema fron migrated db
 		if sch, err = atl.InspectSchema(); err != nil {
-			log.Panic().Err(err).Msg("atlas inspect error")
+			return NewSystemError("schema-inspect", err, "check database accessibility and permissions")
 		}
 	} else {
 		if sch, err = atl.InspectSchema(); err != nil {
-			log.Panic().Err(err).Msg("atlas inspect error")
+			return NewSystemError("schema-inspect", err, "check database accessibility and permissions")
 		}
 		if err = atl.Save(cfg.Gen.SchemaPath, sch); err != nil {
-			log.Panic().Err(err).Msg("schema save error")
+			return NewSystemError("schema-save", err, "check output directory permissions for Gen.SchemaPath")
 		}
 	}
 
@@ -116,17 +124,17 @@ func rootRun(cmd *cobra.Command, args []string) {
 	var conf = &config.Config{}
 	if loadExistConfigFile { // load from existing config file
 		if err = conf.Load(cfg.Gen.ConfigPath); err != nil { // load
-			log.Panic().Err(err).Msg("config load error")
+			return NewSystemError("config-load-generated", err, "check --load_config and Gen.ConfigPath")
 		}
 		if err = conf.Init(atlasDbType, sch, cfg.Gen.GenPath, cfg.Gen.FileName, cfg.Gen.PackageName, cfg.Gen.ClassName); err != nil { // init
-			log.Panic().Err(err).Msg("config init error")
+			return NewSystemError("config-init", err, "check schema and generation settings")
 		}
 	} else {
 		if err = conf.Init(atlasDbType, sch, cfg.Gen.GenPath, cfg.Gen.FileName, cfg.Gen.PackageName, cfg.Gen.ClassName); err != nil { // init
-			log.Panic().Err(err).Msg("config init error")
+			return NewSystemError("config-init", err, "check schema and generation settings")
 		}
 		if err = conf.Save(cfg.Gen.ConfigPath); err != nil { // save
-			log.Panic().Err(err).Msg("config save error")
+			return NewSystemError("config-save", err, "check output directory permissions for Gen.ConfigPath")
 		}
 	}
 
@@ -140,7 +148,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	case atlas.DbTypeSQLite:
 		psr = parser_sqlite.New(&conf.Schema)
 	default:
-		log.Panic().Msgf("invalid db type: %s", cfg.DB.Type)
+		return NewUserError("parser-init", fmt.Sprintf("unsupported db type: %s", cfg.DB.Type), "use one of: mysql, mariadb, postgres, sqlite, tidb, cockroachdb")
 	}
 
 	// 5. gen code
@@ -148,9 +156,34 @@ func rootRun(cmd *cobra.Command, args []string) {
 	{
 		gen.Init(conf, psr)
 		if err = gen.GenCode(); err != nil { // code generate
-			log.Panic().Err(err).Msg("code generate error")
+			return NewSystemError("code-generate", err, "check query config and generation path settings")
 		}
 	}
 	log.Info().Str("generate path", cfg.Gen.GenPath).Msg("Code generated Succeed")
+	return nil
+}
 
+func connectDB(cfg *Config, dbType atlas.DbType) (*db.Conn, error) {
+	switch dbType {
+	case atlas.DbTypeMySQL, atlas.DbTypeMaria, atlas.DbTypeTiDB:
+		conn, err := db_mysql.New(db_mysql.Dsn(cfg.DB.User, cfg.DB.Password, cfg.DB.Addr, cfg.DB.Port, cfg.DB.Name), cfg.DB.Name)
+		if err != nil {
+			return nil, NewSystemError("db-connect", err, "check DB.Addr, DB.Port, DB.User, DB.Password, DB.Name")
+		}
+		return conn, nil
+	case atlas.DbTypePostgre, atlas.DbTypeCockroachDB:
+		conn, err := db_postgres.New(db_postgres.Dsn(cfg.DB.Addr, cfg.DB.Port, cfg.DB.User, cfg.DB.Password, cfg.DB.Name), cfg.DB.Name)
+		if err != nil {
+			return nil, NewSystemError("db-connect", err, "check DB.Addr, DB.Port, DB.User, DB.Password, DB.Name")
+		}
+		return conn, nil
+	case atlas.DbTypeSQLite:
+		conn, err := db_sqlite.New(cfg.DB.Path)
+		if err != nil {
+			return nil, NewSystemError("db-connect", err, "check DB.Path")
+		}
+		return conn, nil
+	default:
+		return nil, NewUserError("db-connect", fmt.Sprintf("unsupported db type: %s", cfg.DB.Type), "use one of: mysql, mariadb, postgres, sqlite, tidb, cockroachdb")
+	}
 }

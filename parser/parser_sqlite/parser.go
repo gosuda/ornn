@@ -19,12 +19,22 @@ type Parser struct {
 	sch *config.Schema
 }
 
-func (p *Parser) Parse(sql string) (*parser.ParsedQuery, error) {
-	stmtNode, err := sqlparser.Parse(sql)
+func parseSQL(sql string) (stmtNode sqlparser.Statement, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("parser backend panic: %v", r)
+		}
+	}()
+
+	return sqlparser.Parse(sql)
+}
+
+func (p *Parser) Parse(sql string) (parsedQuery *parser.ParsedQuery, err error) {
+	stmtNode, err := parseSQL(sql)
 	if err != nil {
 		return nil, err
 	}
-	parsedQuery := &parser.ParsedQuery{}
+	parsedQuery = &parser.ParsedQuery{}
 	parsedQuery.Init(sql)
 
 	switch stmt := stmtNode.(type) {
@@ -49,6 +59,9 @@ func (p *Parser) Parse(sql string) (*parser.ParsedQuery, error) {
 func (p *Parser) parseSelect(stmt *sqlparser.Select, parsedQuery *parser.ParsedQuery) error {
 	parsedQuery.QueryType = parser.QueryTypeSelect
 	tbl, err := p.parseFrom(stmt.From)
+	if err != nil {
+		return err
+	}
 
 	// select
 	for _, selectExpr := range stmt.SelectExprs {
@@ -68,10 +81,10 @@ func (p *Parser) parseSelect(stmt *sqlparser.Select, parsedQuery *parser.ParsedQ
 					parsedQuery.Ret = append(parsedQuery.Ret, parser.NewField(col.Name, "any"))
 				}
 			default:
-				panic("need more programming")
+				return fmt.Errorf("parser error | unsupported select expression type %T", data.Expr)
 			}
 		default:
-			panic("need more programming")
+			return fmt.Errorf("parser error | unsupported select expression %T", selectExpr)
 		}
 	}
 
@@ -92,11 +105,16 @@ func (p *Parser) parseInsert(stmt *sqlparser.Insert, parsedQuery *parser.ParsedQ
 		return fmt.Errorf("table not found | %s", tableName)
 	}
 
-	// values
-	// insert fields
-	vals, _ := stmt.Rows.(sqlparser.Values)
-	if len(vals) != 1 {
-		panic("bulk query is invalid, use bulk options")
+	// VALUES is the only supported INSERT source.
+	vals, ok := stmt.Rows.(sqlparser.Values)
+	if !ok {
+		return fmt.Errorf("parser error | unsupported INSERT source %T", stmt.Rows)
+	}
+	if len(vals) == 0 {
+		return fmt.Errorf("parser error | INSERT has no VALUES rows")
+	}
+	if len(vals) > 1 {
+		return fmt.Errorf("parser error | bulk query is invalid, use bulk options")
 	}
 	colNames := make([]string, len(tbl.Columns))
 	if len(stmt.Columns) == 0 { // insert all fields
@@ -104,23 +122,23 @@ func (p *Parser) parseInsert(stmt *sqlparser.Insert, parsedQuery *parser.ParsedQ
 			colNames[i] = col.Name
 		}
 		if len(tbl.Columns) != len(vals[0]) {
-			panic("not same column and value count")
+			return fmt.Errorf("parser error | column count and values count mismatch")
 		}
 
 		for i, list := range vals[0] {
 			if _, paramMarkerExpr, ok := ParseDriverValue(list); !ok {
-				panic("need more programming")
+				return fmt.Errorf("parser error | unsupported insert value type")
 			} else if paramMarkerExpr != nil {
 				parsedQuery.Arg = append(parsedQuery.Arg, parser.NewField("val_"+colNames[i], p.ConvType(tbl.Columns[i].Type)))
 			}
 		}
 	} else { // insert specific fields
 		if len(stmt.Columns) != len(vals[0]) {
-			panic("not same column and value count")
+			return fmt.Errorf("parser error | column count and values count mismatch")
 		}
 		for i, list := range vals[0] {
 			if _, paramMarkerExpr, ok := ParseDriverValue(list); !ok {
-				panic("need more programming")
+				return fmt.Errorf("parser error | unsupported insert value type")
 			} else if paramMarkerExpr != nil {
 				colName := stmt.Columns[i].String()
 				col, ok := tbl.Column(colName)
@@ -134,7 +152,7 @@ func (p *Parser) parseInsert(stmt *sqlparser.Insert, parsedQuery *parser.ParsedQ
 	}
 	// ondup
 	if len(stmt.OnDup) != 0 {
-		panic("need more programming")
+		return fmt.Errorf("parser error | ON DUPLICATE is not supported for sqlite")
 	}
 
 	return nil
@@ -162,7 +180,7 @@ func (p *Parser) parseUpdate(stmt *sqlparser.Update, parsedQuery *parser.ParsedQ
 				}
 			}
 		default:
-			panic("need more programming")
+			return fmt.Errorf("parser error | unsupported update value type %T", updateExpr.Expr)
 		}
 	}
 
@@ -194,14 +212,18 @@ func (p *Parser) parseDelete(stmt *sqlparser.Delete, parsedQuery *parser.ParsedQ
 func (p *Parser) parseFrom(tableExprs sqlparser.TableExprs) (tbl *schema.Table, err error) {
 	if len(tableExprs) != 1 {
 		// TODO: select join
-		return nil, fmt.Errorf("need more programming")
+		return nil, fmt.Errorf("parser error | sqlite parser supports single-table queries only")
 	}
 	var tableName string
 	switch from := tableExprs[0].(type) {
 	case *sqlparser.AliasedTableExpr:
-		tableName = from.Expr.(sqlparser.TableName).Name.String()
+		tblName, ok := from.Expr.(sqlparser.TableName)
+		if !ok {
+			return nil, fmt.Errorf("parser error | unsupported table expression %T", from.Expr)
+		}
+		tableName = tblName.Name.String()
 	default:
-		panic("need more programming")
+		return nil, fmt.Errorf("parser error | unsupported table clause %T", from)
 	}
 	if tbl, _ = p.sch.Table(tableName); tbl == nil {
 		return nil, fmt.Errorf("table not found | %s", tableName)
@@ -210,7 +232,13 @@ func (p *Parser) parseFrom(tableExprs sqlparser.TableExprs) (tbl *schema.Table, 
 }
 
 func (p *Parser) parseWhere(where *sqlparser.Where, tbl *schema.Table, parsedQuery *parser.ParsedQuery) error {
-	whereFields := ParseWhereToFields(where.Expr)
+	if where == nil || where.Expr == nil {
+		return nil
+	}
+	whereFields, err := parseWhereToFields(where.Expr)
+	if err != nil {
+		return err
+	}
 	for _, where := range whereFields {
 		if where.right == nil || where.left == nil {
 			continue

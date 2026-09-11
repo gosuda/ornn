@@ -1,6 +1,10 @@
 package parser_postgres
 
-import "github.com/cockroachdb/cockroachdb-parser/pkg/sql/sem/tree"
+import (
+	"fmt"
+
+	"github.com/cockroachdb/cockroachdb-parser/pkg/sql/sem/tree"
+)
 
 func ParseDriverValue(node tree.Expr) (*tree.NumVal, *tree.StrVal, *tree.Placeholder, bool) {
 	switch data := node.(type) {
@@ -22,8 +26,13 @@ type binaryExpr struct {
 }
 
 func ParseWhereToFields(whereExpr tree.Expr) []*binaryExpr {
+	fields, _ := parseWhereToFields(whereExpr)
+	return fields
+}
+
+func parseWhereToFields(whereExpr tree.Expr) ([]*binaryExpr, error) {
 	if whereExpr == nil {
-		return nil
+		return nil, nil
 	}
 	fields := make([]*binaryExpr, 0, 100)
 
@@ -35,15 +44,31 @@ func ParseWhereToFields(whereExpr tree.Expr) []*binaryExpr {
 			op:    data.Operator.String(),
 		})
 	case *tree.AndExpr:
-		fields = append(ParseWhereToFields(data.Left), fields...)
-		fields = append(fields, ParseWhereToFields(data.Right)...)
+		left, err := parseWhereToFields(data.Left)
+		if err != nil {
+			return nil, err
+		}
+		right, err := parseWhereToFields(data.Right)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, left...)
+		fields = append(fields, right...)
 	case *tree.OrExpr:
-		fields = append(ParseWhereToFields(data.Left), fields...)
-		fields = append(fields, ParseWhereToFields(data.Right)...)
+		left, err := parseWhereToFields(data.Left)
+		if err != nil {
+			return nil, err
+		}
+		right, err := parseWhereToFields(data.Right)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, left...)
+		fields = append(fields, right...)
 	case *tree.ParenExpr:
-		fields = append(fields, ParseWhereToFields(data.Expr)...)
+		return parseWhereToFields(data.Expr)
 	case *tree.NotExpr:
-		fields = append(fields, ParseWhereToFields(data.Expr)...)
+		return parseWhereToFields(data.Expr)
 	case *tree.NumVal:
 		// do nothing
 	case *tree.StrVal:
@@ -53,7 +78,7 @@ func ParseWhereToFields(whereExpr tree.Expr) []*binaryExpr {
 	case *tree.Subquery:
 		// do nothing
 	default:
-		panic("parser error | not support where type")
+		return nil, fmt.Errorf("parser error | unsupported where type %T", whereExpr)
 	}
-	return fields
+	return fields, nil
 }

@@ -2,7 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"ariga.io/atlas/sql/schema"
 	"github.com/gosuda/ornn/atlas"
@@ -17,12 +18,12 @@ type Config struct {
 
 // TODO - 추후 config 형식 변경 예정
 func (t *Config) Load(path string) error {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(data, &t)
+	err = json.Unmarshal(data, t)
 	if err != nil {
 		return err
 	}
@@ -53,16 +54,19 @@ func (t *Config) Init(dbType atlas.DbType, schema *schema.Schema, filePath, file
 }
 
 func (t *Config) Save(path string) error {
-	data, err := json.MarshalIndent(&t, "", "\t")
+	data, err := json.MarshalIndent(t, "", "\t")
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, data, 0700)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-	return nil
+
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0600)
 }
 
 type Global struct {

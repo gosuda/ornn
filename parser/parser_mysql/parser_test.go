@@ -218,3 +218,10 @@ WHERE u.id = ? AND o.amount > ?
 	require.Contains(t, args, "where_u.id")
 	require.Contains(t, args, "where_o.amount")
 }
+
+func TestEmptyQueryReturnsError(t *testing.T) {
+	p := newParser(t)
+
+	_, err := p.Parse(" \n -- comment only")
+	require.Error(t, err)
+}

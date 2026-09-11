@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/gosuda/ornn/config"
 	"github.com/gosuda/ornn/gen/template"
@@ -33,8 +34,13 @@ func (t *ORNN) GenCode() (err error) {
 
 	// write code to file
 	genFile := t.conf.Global.FilePath + t.conf.Global.FileName
-	err = os.WriteFile(genFile, []byte(code), 0700)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(genFile), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(genFile, []byte(code), 0600); err != nil {
+		return err
+	}
+	if err := os.Chmod(genFile, 0600); err != nil {
 		return err
 	}
 
@@ -42,8 +48,13 @@ func (t *ORNN) GenCode() (err error) {
 	useCase := template.UseCase(t.conf.Global.PackageName, t.conf.Global.ClassName)
 
 	genUseCase := t.conf.Global.FilePath + "use_case.go"
-	err = os.WriteFile(genUseCase, []byte(useCase), 0700)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(genUseCase), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(genUseCase, []byte(useCase), 0600); err != nil {
+		return err
+	}
+	if err := os.Chmod(genUseCase, 0600); err != nil {
 		return err
 	}
 

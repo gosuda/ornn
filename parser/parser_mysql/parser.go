@@ -22,14 +22,28 @@ type Parser struct {
 	sch *config.Schema
 }
 
-func (p *Parser) Parse(sql string) (*parser.ParsedQuery, error) {
+func parseSQL(sql string) (stmtNodes []ast.StmtNode, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("parser backend panic: %v", r)
+		}
+	}()
+
 	sqlParser := sqlparser.New()
-	stmtNodes, _, err := sqlParser.Parse(sql, "", "")
+	stmtNodes, _, err = sqlParser.Parse(sql, "", "")
+	return
+}
+
+func (p *Parser) Parse(sql string) (pq *parser.ParsedQuery, err error) {
+	stmtNodes, err := parseSQL(sql)
 	if err != nil {
 		return nil, err
 	}
+	if len(stmtNodes) == 0 {
+		return nil, fmt.Errorf("parser error | query contains no statements")
+	}
 
-	pq := &parser.ParsedQuery{}
+	pq = &parser.ParsedQuery{}
 	pq.Init(sql)
 
 	for _, stmtNode := range stmtNodes {
@@ -263,11 +277,20 @@ func (p *Parser) parseFrom(tableClause *ast.TableRefsClause) (*schema.Table, err
 	if tableClause == nil || tableClause.TableRefs == nil {
 		return nil, fmt.Errorf("parser error | missing FROM clause")
 	}
-	tableSources := ParseJoinToTables(tableClause.TableRefs)
+	tableSources, err := parseJoinToTables(tableClause.TableRefs)
+	if err != nil {
+		return nil, err
+	}
+	if len(tableSources) == 0 {
+		return nil, fmt.Errorf("parser error | missing table source")
+	}
 
 	// 단일 테이블
 	if len(tableSources) == 1 {
-		tableName := ParseTableName(tableSources[0])
+		tableName, err := parseTableName(tableSources[0])
+		if err != nil {
+			return nil, err
+		}
 		tbl, ok := p.sch.Table(tableName)
 		if !ok {
 			return nil, fmt.Errorf("parser error | not found table %s", tableName)
@@ -280,7 +303,10 @@ func (p *Parser) parseFrom(tableClause *ast.TableRefsClause) (*schema.Table, err
 	exists := map[string]bool{}
 
 	for _, ts := range tableSources {
-		tname := ParseTableName(ts)
+		tname, err := parseTableName(ts)
+		if err != nil {
+			return nil, err
+		}
 		baseTbl, ok := p.sch.Table(tname)
 		if !ok {
 			return nil, fmt.Errorf("parser error | not found table %s", tname)
@@ -321,43 +347,64 @@ func (p *Parser) parseFrom(tableClause *ast.TableRefsClause) (*schema.Table, err
 }
 
 func ParseTableName(table *ast.TableSource) string {
+	name, _ := parseTableName(table)
+	return name
+}
+
+func parseTableName(table *ast.TableSource) (string, error) {
+	if table == nil {
+		return "", fmt.Errorf("parser error | missing table source")
+	}
 	switch data := table.Source.(type) {
 	case *ast.TableName:
-		return data.Name.String()
+		return data.Name.String(), nil
 	case *ast.SelectStmt:
-		return data.Text()
+		return data.Text(), nil
 	default:
-		panic("parser error | not support table type")
+		return "", fmt.Errorf("parser error | unsupported table type %T", table.Source)
 	}
 }
 
 // 왼/오 재귀로 JOIN 내 테이블 소스 수집
 func ParseJoinToTables(join *ast.Join) []*ast.TableSource {
+	nodes, _ := parseJoinToTables(join)
+	return nodes
+}
+
+func parseJoinToTables(join *ast.Join) ([]*ast.TableSource, error) {
 	if join == nil {
-		return nil
+		return nil, nil
 	}
 	nodes := make([]*ast.TableSource, 0, 8)
 	if join.Left != nil {
 		switch data := join.Left.(type) {
 		case *ast.Join:
-			nodes = append(nodes, ParseJoinToTables(data)...)
+			child, err := parseJoinToTables(data)
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, child...)
 		case *ast.TableSource:
 			nodes = append(nodes, data)
 		default:
-			panic("parser error | not support join-left type")
+			return nil, fmt.Errorf("parser error | unsupported join-left type %T", data)
 		}
 	}
 	if join.Right != nil {
 		switch data := join.Right.(type) {
 		case *ast.Join:
-			nodes = append(nodes, ParseJoinToTables(data)...)
+			child, err := parseJoinToTables(data)
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, child...)
 		case *ast.TableSource:
 			nodes = append(nodes, data)
 		default:
-			panic("parser error | not support join-right type")
+			return nil, fmt.Errorf("parser error | unsupported join-right type %T", data)
 		}
 	}
-	return nodes
+	return nodes, nil
 }
 func (p *Parser) parseWhere(where ast.ExprNode, tbl *schema.Table, pq *parser.ParsedQuery) error {
 	if where == nil {

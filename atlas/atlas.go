@@ -2,7 +2,9 @@ package atlas
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"ariga.io/atlas/schemahcl"
 	"ariga.io/atlas/sql/migrate"
@@ -14,10 +16,12 @@ import (
 	"github.com/hashicorp/hcl/v2/hclparse"
 )
 
-func New(dbType DbType, conn *db.Conn) *Atlas {
+func New(dbType DbType, conn *db.Conn) (*Atlas, error) {
 	atl := &Atlas{}
-	atl.Init(dbType, conn)
-	return atl
+	if err := atl.Init(dbType, conn); err != nil {
+		return nil, err
+	}
+	return atl, nil
 }
 
 type Atlas struct {
@@ -29,6 +33,13 @@ type Atlas struct {
 }
 
 func (t *Atlas) Init(dbType DbType, conn *db.Conn) error {
+	if conn == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+	if conn.Raw() == nil {
+		return fmt.Errorf("database connection is not initialized")
+	}
+
 	var err error
 	t.DbName = conn.DbName
 	t.DbType = dbType
@@ -45,6 +56,8 @@ func (t *Atlas) Init(dbType DbType, conn *db.Conn) error {
 		t.marshaler = sqlite.MarshalHCL
 		t.unmarshaler = sqlite.EvalHCL
 		t.driver, err = sqlite.Open(conn.Raw())
+	default:
+		return fmt.Errorf("unsupported database type: %d", dbType)
 	}
 	if err != nil {
 		return err
@@ -57,7 +70,13 @@ func (t *Atlas) Save(path string, sch *schema.Schema) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, bt, 0700)
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, bt, 0600); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0600)
 }
 
 func (t *Atlas) Load(path string) (*schema.Schema, error) {

@@ -1,6 +1,8 @@
 package parser_sqlite
 
 import (
+	"fmt"
+
 	"github.com/CovenantSQL/sqlparser"
 )
 
@@ -11,8 +13,13 @@ type binaryExpr struct {
 }
 
 func ParseWhereToFields(whereExpr sqlparser.Expr) []*binaryExpr {
+	fields, _ := parseWhereToFields(whereExpr)
+	return fields
+}
+
+func parseWhereToFields(whereExpr sqlparser.Expr) ([]*binaryExpr, error) {
 	if whereExpr == nil {
-		return nil
+		return nil, nil
 	}
 	fields := make([]*binaryExpr, 0, 100)
 
@@ -24,22 +31,38 @@ func ParseWhereToFields(whereExpr sqlparser.Expr) []*binaryExpr {
 			op:    data.Operator,
 		})
 	case *sqlparser.AndExpr:
-		fields = append(ParseWhereToFields(data.Left), fields...)
-		fields = append(fields, ParseWhereToFields(data.Right)...)
+		left, err := parseWhereToFields(data.Left)
+		if err != nil {
+			return nil, err
+		}
+		right, err := parseWhereToFields(data.Right)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, left...)
+		fields = append(fields, right...)
 	case *sqlparser.OrExpr:
-		fields = append(ParseWhereToFields(data.Left), fields...)
-		fields = append(fields, ParseWhereToFields(data.Right)...)
+		left, err := parseWhereToFields(data.Left)
+		if err != nil {
+			return nil, err
+		}
+		right, err := parseWhereToFields(data.Right)
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, left...)
+		fields = append(fields, right...)
 	case *sqlparser.ComparisonExpr:
 		fields = append(fields, &binaryExpr{
 			left:  data.Left,
 			right: data.Right,
 		})
 	case *sqlparser.ParenExpr:
-		fields = append(fields, ParseWhereToFields(data.Expr)...)
+		return parseWhereToFields(data.Expr)
 	case *sqlparser.NotExpr:
-		fields = append(fields, ParseWhereToFields(data.Expr)...)
+		return parseWhereToFields(data.Expr)
 	case *sqlparser.ExistsExpr:
-		fields = append(fields, ParseWhereToFields(data.Subquery)...)
+		return parseWhereToFields(data.Subquery)
 	case *sqlparser.SQLVal:
 		// do nothing
 	case *sqlparser.NullVal:
@@ -51,9 +74,9 @@ func ParseWhereToFields(whereExpr sqlparser.Expr) []*binaryExpr {
 	case *sqlparser.ListArg:
 		// do nothing
 	default:
-		panic("parser error | not support where type")
+		return nil, fmt.Errorf("parser error | unsupported where type %T", whereExpr)
 	}
-	return fields
+	return fields, nil
 }
 
 func ParseDriverValue(node sqlparser.Expr) (*sqlparser.ColName, *sqlparser.SQLVal, bool) {
